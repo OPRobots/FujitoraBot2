@@ -1,0 +1,8 @@
+.pio
+.pioenvs
+.piolibdeps
+.vscode
+.vscode/*
+desktop.ini
+*.skb
+*.code-workspace
