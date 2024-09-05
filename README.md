@@ -1,0 +1,1 @@
+# FujitoraBot2
