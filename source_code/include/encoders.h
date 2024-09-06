@@ -1,6 +1,7 @@
 #ifndef __ENCODERS_H
 #define __ENCODERS_H
 
+#include "constants.h"
 #include "config.h"
 #include "setup.h"
 

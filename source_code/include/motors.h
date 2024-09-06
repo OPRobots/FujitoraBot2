@@ -1,6 +1,7 @@
 #ifndef __MOTORS_H
 #define __MOTORS_H
 
+#include "constants.h"
 #include "config.h"
 #include "delay.h"
 #include "utils.h"
@@ -15,6 +16,5 @@ bool is_esc_inited(void);
 void init_esc(void);
 void set_motors_speed(float velI, float velD);
 void set_fan_speed(uint8_t vel);
-void set_fans_speed(int8_t velI, int8_t velD);
 
 #endif

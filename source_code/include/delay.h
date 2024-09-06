@@ -1,6 +1,7 @@
 #ifndef __DELAY_H
 #define __DELAY_H
 
+#include "constants.h"
 #include "setup.h"
 
 #include <libopencm3/cm3/dwt.h>

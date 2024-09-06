@@ -19,9 +19,9 @@ static uint32_t resume_speed_ms = 0;
 
 /**
  * @brief Calcula la corrección de posición en línea mediante PID
- * 
+ *
  * @param posicion Posición actual actual del robot sobre la línea
- * 
+ *
  * @return float Corrección aplicada sobre la velocidad
  */
 
@@ -40,9 +40,9 @@ float calc_pid_correction(int32_t posicion) {
 
 /**
  * @brief Calcula la corrección de la velocidad en m/s mediante PID
- * 
+ *
  * @param velocidadActualMs Velocidad actual en m/s obtenida de los encoders
- * 
+ *
  * @return float Velocidad aplicada a los motores en %
  */
 
@@ -70,8 +70,8 @@ float calc_ms_pid_correction(float velocidadActualMs) {
 
 /**
  * @brief Comprueba si el robot está en funcionamiento
- * 
- * @return bool 
+ *
+ * @return bool
  */
 
 bool is_competicion_iniciada(void) {
@@ -80,7 +80,7 @@ bool is_competicion_iniciada(void) {
 
 /**
  * @brief Establece el estado actual del robot
- * 
+ *
  * @param state Estado actual del robot
  */
 
@@ -98,16 +98,12 @@ uint32_t get_competicion_iniciada_millis(void) {
 }
 
 /**
- * @brief Función ISR del Timer5 encargada del control de posición, velocidad y mapeo de pista en caso de robotracer
- * 
+ * @brief Función ISR del Timer5 encargada del control de posición y velocidad
+ *
  */
 void pid_speed_timer_custom_isr(void) {
   calc_sensor_line_position();
   correccion_velocidad = calc_pid_correction(get_sensor_line_position());
-
-  if (get_config_track() == CONFIG_TRACK_ROBOTRACER) {
-    robotracer_loop_flow();
-  }
 
   if (is_competicion_iniciada()) {
     if (get_config_speed() == CONFIG_SPEED_MS) {
@@ -149,7 +145,7 @@ void pid_speed_timer_custom_isr(void) {
       } else {
         velocidad = 0;
         set_motors_speed(0, 0);
-        set_fans_speed(0, 0);
+        set_fan_speed(0);
         return;
       }
     } else {
@@ -169,7 +165,7 @@ void pid_speed_timer_custom_isr(void) {
       } else {
         velocidad = 0;
         set_motors_speed(0, 0);
-        set_fans_speed(0, 0);
+        set_fan_speed(0);
         return;
       }
     }
@@ -192,9 +188,7 @@ void pid_speed_timer_custom_isr(void) {
       velI = 100;
     }
     set_motors_speed(velD, velI);
-    if (get_config_track() == CONFIG_TRACK_LINEFOLLOWER) {
-      set_fan_speed(fullVelocidadVentilador ? velocidadVentiladorIdeal : (velocidadVentiladorIdeal / 2));
-    }
+    set_fan_speed(fullVelocidadVentilador ? velocidadVentiladorIdeal : (velocidadVentiladorIdeal / 2));
 
   } else {
     velocidad = 0;
@@ -204,8 +198,8 @@ void pid_speed_timer_custom_isr(void) {
 
 /**
  * @brief Obtiene la corrección de la Velocidad mediante PID para tareas de depuración
- * 
- * @return float 
+ *
+ * @return float
  */
 float get_speed_correction(void) {
   return correccion_velocidad;
@@ -213,7 +207,7 @@ float get_speed_correction(void) {
 
 /**
  * @brief Establece la velocidad ideal de los motores desde configuración
- * 
+ *
  * @param v Velocidad en % de PWM
  */
 void set_ideal_motors_speed(int32_t v) {
@@ -222,7 +216,7 @@ void set_ideal_motors_speed(int32_t v) {
 
 /**
  * @brief Establece la velocidad ideal de los motores desde configuración
- * 
+ *
  * @param ms Velocidad en m/s
  */
 void set_ideal_motors_ms_speed(float ms) {
@@ -231,7 +225,7 @@ void set_ideal_motors_ms_speed(float ms) {
 
 /**
  * @brief Establece la aceleración máxima al incrementar velocidad
- * 
+ *
  * @param mss Aceleración en m/s/s
  */
 void set_acceleration_mss(float mss) {
@@ -240,7 +234,7 @@ void set_acceleration_mss(float mss) {
 
 /**
  * @brief Establece la aceleración máxima al reducir velocidad
- * 
+ *
  * @param mss Aceleración en m/s/s
  */
 void set_deceleration_mss(float mss) {
@@ -249,7 +243,7 @@ void set_deceleration_mss(float mss) {
 
 /**
  * @brief Establece la velocidad del ventilador de succión / soplar
- * 
+ *
  * @param v Velocidad en % de PWM
  */
 void set_ideal_fan_speed(int32_t v) {
@@ -258,7 +252,7 @@ void set_ideal_fan_speed(int32_t v) {
 
 /**
  * @brief Reanuda la ejecución del Timer encargado del PID
- * 
+ *
  */
 void resume_pid_speed_timer(void) {
   resume_speed_ms = get_clock_ticks();
@@ -266,15 +260,12 @@ void resume_pid_speed_timer(void) {
   correccion_velocidad = 0;
   velocidadObjetivoMs = 0;
   fullVelocidadVentilador = false;
-  if (get_config_track() == CONFIG_TRACK_ROBOTRACER) {
-    robotracer_restart();
-  }
   timer_enable_irq(TIM5, TIM_DIER_CC1IE);
 }
 
 /**
  * @brief Pausa la ejecución del Timer encargado del PID
- * 
+ *
  */
 void pause_pid_speed_timer(void) {
   timer_disable_irq(TIM5, TIM_DIER_CC1IE);
@@ -284,7 +275,7 @@ void pause_pid_speed_timer(void) {
 
 /**
  * @brief Imprime valores clave para depurar la aceleración
- * 
+ *
  */
 void debug_accel(void) {
   printf("%.2f\t%.2f\t%.2f\t%.2f\n", velocidadIdealMs, velocidadObjetivoMs, get_encoder_avg_speed(), velocidad / 10.0f);

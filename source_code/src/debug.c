@@ -18,15 +18,8 @@ int32_t arr_log[LOG_SIZE][LOG_FIELDS];
 static void debug_sensors_raw(void) {
   if (get_clock_ticks() > last_print_debug + 50) {
 
-    for (int8_t sensor = get_sensors_line_num() - 1; sensor >= 0; sensor--) {
+    for (int8_t sensor = get_sensors_num() - 1; sensor >= 0; sensor--) {
       printf("%d\t", get_sensor_raw(sensor));
-    }
-
-    if (get_config_robot() == CONFIG_ROBOT_ROBOTRACER) {
-      printf("\t");
-      for (int8_t sensor = get_sensors_line_num(); sensor < get_sensors_num(); sensor++) {
-        printf("%d\t", get_sensor_raw(sensor));
-      }
     }
     printf("\n");
     last_print_debug = get_clock_ticks();
@@ -39,15 +32,8 @@ static void debug_sensors_raw(void) {
  */
 static void debug_sensors_calibrated(void) {
   if (get_clock_ticks() > last_print_debug + 50) {
-    for (int8_t sensor = get_sensors_line_num() - 1; sensor >= 0; sensor--) {
+    for (int8_t sensor = get_sensors_num() - 1; sensor >= 0; sensor--) {
       printf("%d\t", get_sensor_calibrated(sensor));
-    }
-
-    if (get_config_robot() == CONFIG_ROBOT_ROBOTRACER) {
-      printf("\t");
-      for (int8_t sensor = get_sensors_line_num(); sensor < get_sensors_num(); sensor++) {
-        printf("%d\t", get_sensor_calibrated(sensor));
-      }
     }
     printf("\n");
     last_print_debug = get_clock_ticks();
@@ -62,7 +48,7 @@ static void debug_all_leds(void) {
 
 static void debug_digital_io(void) {
   if (get_clock_ticks() > last_print_debug + 250) {
-    printf("BTN: %d SW1: %d SW2: %d SW3: %d CFM: %d CFU: %d CFD: %d\n", get_start_btn(), get_swtich_1(), get_swtich_2(), get_swtich_3(), get_menu_mode_btn(), get_menu_up_btn(), get_menu_down_btn());
+    printf("BTN: %d CFM: %d CFU: %d CFD: %d\n", get_start_btn(), get_menu_mode_btn(), get_menu_up_btn(), get_menu_down_btn());
     last_print_debug = get_clock_ticks();
   }
 }
@@ -81,7 +67,7 @@ static void debug_posicion_correccion(void) {
 static void debug_line_position(void) {
   if (get_clock_ticks() > last_print_debug + 50) {
     calc_sensor_line_position();
-    printf("%d\t%ld\t%d\n", -(get_sensors_line_num() + 2) * 1000 / 2, get_sensor_line_position(), (get_sensors_line_num() + 2) * 1000 / 2);
+    printf("%d\t%ld\t%d\n", -(get_sensors_num() + 2) * 1000 / 2, get_sensor_line_position(), (get_sensors_num() + 2) * 1000 / 2);
     last_print_debug = get_clock_ticks();
   }
 }
@@ -101,11 +87,7 @@ static void debug_motors(void) {
 
 static void debug_fans(void) {
   if (is_esc_inited()) {
-    if (get_config_robot() == CONFIG_ROBOT_LINEFOLLOWER) {
-      set_fan_speed(50);
-    } else {
-      set_fans_speed(50, 50);
-    }
+    set_fan_speed(50);
   }
 }
 

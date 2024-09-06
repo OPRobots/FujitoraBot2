@@ -1,15 +1,22 @@
 #include "leds.h"
 
-uint32_t lastTicksRainbow = 0;
-uint32_t rainbowRGB[3] = {LEDS_MAX_PWM, 0, 0};
-int rainbowColorDesc = 0;
-int rainbowColorAsc = 1;
+static bool statusLedState = false;
 
-uint32_t lastTicksHeartbeat = 0;
-uint32_t lastTicksWarning = 0;
+static uint32_t lastTicksRainbow = 0;
+static uint32_t rainbowRGB[3] = {LEDS_MAX_PWM, 0, 0};
+static int rainbowColorDesc = 0;
+static int rainbowColorAsc = 1;
 
-uint32_t lastTicksWarningRGB = 0;
-bool lastWarningRGBState = false;
+static uint32_t lastTicksHeartbeat = 0;
+static uint32_t lastTicksWarning = 0;
+
+static uint32_t lastTicksWarningRGB = 0;
+static bool lastWarningRGBState = false;
+
+static uint32_t lastTicksWave = 0;
+static uint8_t currentIndexWave = 0;
+
+static uint32_t lastTicksWarningBateria = 0;
 
 /**
  * @brief Establece el estado del led de estado
@@ -17,10 +24,11 @@ bool lastWarningRGBState = false;
  * @param state Estado del led
  */
 void set_status_led(bool state) {
+  statusLedState = state;
   if (state) {
-    gpio_set(GPIOA, GPIO12);
+    timer_set_oc_value(TIM1, TIM_OC2, LEDS_MAX_PWM);
   } else {
-    gpio_clear(GPIOA, GPIO12);
+    timer_set_oc_value(TIM1, TIM_OC2, 0);
   }
 }
 
@@ -29,7 +37,7 @@ void set_status_led(bool state) {
  *
  */
 void toggle_status_led(void) {
-  gpio_toggle(GPIOA, GPIO12);
+  set_status_led(!statusLedState);
 }
 
 /**
@@ -110,8 +118,171 @@ void set_neon_heartbeat(void) {
   }
 }
 
+void set_leds_battery_level(float battery_level) {
+  // C4 - A3 - A2 - A1 - A0 - A4 - A5 - A6 - A7 - C5
+
+  float percent_battery_level = map(battery_level, BATTERY_LOW_LIMIT_VOLTAGE, BATTERY_HIGH_LIMIT_VOLTAGE, 0.0f, 100.0f);
+  if (percent_battery_level <= 10) {
+    gpio_clear(GPIOA, GPIO0 | GPIO1 | GPIO2 | GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
+    gpio_clear(GPIOC, GPIO4 | GPIO5);
+
+    if (get_clock_ticks() > lastTicksWarningBateria + 50) {
+
+      gpio_toggle(GPIOA, GPIO0 | GPIO4);
+
+      lastTicksWarningBateria = get_clock_ticks();
+    }
+  } else if (percent_battery_level <= 20) {
+    gpio_clear(GPIOA, GPIO0 | GPIO1 | GPIO2 | GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
+    gpio_clear(GPIOC, GPIO4 | GPIO5);
+
+    gpio_set(GPIOA, GPIO0 | GPIO4);
+  } else if (percent_battery_level <= 40) {
+    gpio_clear(GPIOA, GPIO2 | GPIO3 | GPIO6 | GPIO7);
+    gpio_clear(GPIOC, GPIO4 | GPIO5);
+
+    gpio_set(GPIOA, GPIO0 | GPIO1 | GPIO4 | GPIO5);
+  } else if (percent_battery_level <= 60) {
+    gpio_clear(GPIOA, GPIO3 | GPIO7);
+    gpio_clear(GPIOC, GPIO4 | GPIO5);
+
+    gpio_set(GPIOA, GPIO0 | GPIO1 | GPIO2 | GPIO4 | GPIO5 | GPIO6);
+  } else if (percent_battery_level <= 80) {
+    gpio_clear(GPIOC, GPIO4 | GPIO5);
+
+    gpio_set(GPIOA, GPIO0 | GPIO1 | GPIO2 | GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
+  } else if (percent_battery_level <= 90) {
+    gpio_set(GPIOA, GPIO0 | GPIO1 | GPIO2 | GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
+    gpio_set(GPIOC, GPIO4 | GPIO5);
+  } else {
+    if (get_clock_ticks() > lastTicksWarningBateria + 50) {
+
+      gpio_toggle(GPIOA, GPIO0 | GPIO1 | GPIO2 | GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
+      gpio_toggle(GPIOC, GPIO4 | GPIO5);
+
+      lastTicksWarningBateria = get_clock_ticks();
+    }
+  }
+}
+
+void set_info_led(uint8_t index, bool state) {
+
+  switch (index) {
+    case 0:
+      if (state) {
+        gpio_set(GPIOC, GPIO4);
+      } else {
+        gpio_clear(GPIOC, GPIO4);
+      }
+      break;
+    case 1:
+      if (state) {
+        gpio_set(GPIOA, GPIO3);
+      } else {
+        gpio_clear(GPIOA, GPIO3);
+      }
+      break;
+    case 2:
+      if (state) {
+        gpio_set(GPIOA, GPIO2);
+      } else {
+        gpio_clear(GPIOA, GPIO2);
+      }
+      break;
+    case 3:
+      if (state) {
+        gpio_set(GPIOA, GPIO1);
+      } else {
+        gpio_clear(GPIOA, GPIO1);
+      }
+      break;
+    case 4:
+      if (state) {
+        gpio_set(GPIOA, GPIO0);
+      } else {
+        gpio_clear(GPIOA, GPIO0);
+      }
+      break;
+    case 5:
+      if (state) {
+        gpio_set(GPIOA, GPIO4);
+      } else {
+        gpio_clear(GPIOA, GPIO4);
+      }
+      break;
+    case 6:
+      if (state) {
+        gpio_set(GPIOA, GPIO5);
+      } else {
+        gpio_clear(GPIOA, GPIO5);
+      }
+      break;
+    case 7:
+      if (state) {
+        gpio_set(GPIOA, GPIO6);
+      } else {
+        gpio_clear(GPIOA, GPIO6);
+      }
+      break;
+    case 8:
+      if (state) {
+        gpio_set(GPIOA, GPIO7);
+      } else {
+        gpio_clear(GPIOA, GPIO7);
+      }
+      break;
+    case 9:
+      if (state) {
+        gpio_set(GPIOC, GPIO5);
+      } else {
+        gpio_clear(GPIOC, GPIO5);
+      }
+      break;
+  }
+}
+
+void set_info_leds_wave(int ms) {
+  if (get_clock_ticks() > lastTicksWave + ms) {
+    gpio_clear(GPIOA, GPIO0 | GPIO1 | GPIO2 | GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
+    gpio_clear(GPIOC, GPIO4 | GPIO5);
+
+    switch (currentIndexWave) {
+      case 0:
+        gpio_set(GPIOA, GPIO0 | GPIO4);
+        break;
+      case 1:
+        gpio_set(GPIOA, GPIO1 | GPIO5);
+        break;
+      case 2:
+        gpio_set(GPIOA, GPIO2 | GPIO6);
+        break;
+      case 3:
+        gpio_set(GPIOA, GPIO3 | GPIO7);
+        break;
+      case 4:
+        gpio_set(GPIOC, GPIO4 | GPIO5);
+        break;
+    }
+    currentIndexWave = (currentIndexWave + 1) % 5;
+    lastTicksWave = get_clock_ticks();
+  }
+}
+
+void set_info_leds(void) {
+
+  gpio_set(GPIOA, GPIO0 | GPIO1 | GPIO2 | GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
+  gpio_set(GPIOC, GPIO4 | GPIO5);
+}
+
+void clear_info_leds(void) {
+
+  gpio_clear(GPIOA, GPIO0 | GPIO1 | GPIO2 | GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
+  gpio_clear(GPIOC, GPIO4 | GPIO5);
+}
+
 void all_leds_clear(void) {
   set_neon_fade(0);
   set_RGB_color(0, 0, 0);
   set_status_led(false);
+  clear_info_leds();
 }

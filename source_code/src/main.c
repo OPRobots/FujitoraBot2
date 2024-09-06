@@ -1,4 +1,5 @@
 
+#include "battery.h"
 #include "buttons.h"
 #include "config.h"
 #include "control.h"
@@ -9,16 +10,15 @@
 #include "leds.h"
 #include "menu.h"
 #include "motors.h"
-#include "robotracer.h"
 #include "sensors.h"
 #include "setup.h"
 #include "usart.h"
 
-static bool use_btn_start = false;
 static uint32_t millis_iniciado = 0;
 
 void sys_tick_handler(void) {
   clock_tick();
+  check_buttons();
   if (!is_esc_inited()) {
     init_esc();
   }
@@ -30,6 +30,8 @@ void sys_tick_handler(void) {
 
 int main(void) {
   setup();
+  show_battery_level();
+  set_all_configs();
   eeprom_load();
 
   do {
@@ -44,7 +46,6 @@ int main(void) {
 
   eeprom_save();
 
-  use_btn_start = get_swtich_3();
   millis_iniciado = 0;
   while (1) {
     if (!is_competicion_iniciada()) {
@@ -54,12 +55,9 @@ int main(void) {
       }
       check_menu_button();
       if (!in_debug_mode()) {
-        if ((use_btn_start && get_start_btn()) || (!use_btn_start && get_swtich_3())) {
+        if (get_start_btn()) {
           reset_menu_mode();
           set_status_led(false);
-          while (get_start_btn()) {
-            set_RGB_color(255, 0, 0);
-          }
           uint32_t millisInicio = get_clock_ticks();
           uint16_t millisPasados = 5;
           while (get_clock_ticks() < (millisInicio + get_start_millis())) {
@@ -77,24 +75,16 @@ int main(void) {
           set_RGB_color(0, 0, 0);
           set_ideal_motors_speed(get_base_speed());
           set_ideal_motors_ms_speed(get_base_ms_speed());
-          set_acceleration_mss(get_base_acceleration_mss());
-          set_deceleration_mss(get_base_deceleration_mss());
+          set_acceleration_mss(MAX_ACCEL_MS2);
+          set_deceleration_mss(MAX_BREAK_MS2);
           set_ideal_fan_speed(get_base_fan_speed());
           set_fan_speed(get_base_fan_speed());
-          if (get_config_track() == CONFIG_TRACK_ROBOTRACER) {
-            robotracer_set_turn_speed(get_base_ms_speed());
-            robotracer_set_straight_speed(get_robotracer_straight_ms_speed());
-            robotracer_set_acceleration_mss(get_base_acceleration_mss());
-            robotracer_set_deceleration_mss(get_base_deceleration_mss());
-            robotracer_set_turn_acceleration_mss(get_base_turn_acceleration_mss());
-            set_fans_speed(35, 35);
-          }
           resume_pid_speed_timer();
         }
       }
     } else {
 
-      if ((get_config_run() == CONFIG_RUN_DEBUG && get_clock_ticks() - millis_iniciado > 5000) || !get_swtich_3()) {
+      if ((get_config_run() == CONFIG_RUN_DEBUG && get_clock_ticks() - millis_iniciado > 5000) || !get_start_btn()) {
         emergency_stop();
       }
     }

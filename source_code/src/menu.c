@@ -7,11 +7,6 @@ uint8_t velocidadBase = 0;
 float velocidadMsBase = 0;
 uint8_t velocidadVentiladorBase = 0;
 
-float velocidadRobotracerMsBase = 0;
-float velocidadRobotracerMsStraight = 0;
-float aceleracionCurvaRobotracerMss = 0.8f;
-float aceleracionRobotracerMss = MAX_ACCEL_MS2;
-float deceleracionRobotracerMss = MAX_BREAK_MS2;
 
 static void handle_menu_mode(void) {
   switch (modoConfig) {
@@ -45,15 +40,6 @@ static void handle_menu_value(void) {
       }
       break;
     case MODE_SPEED:
-
-      //? Robotracer Config Variables
-      /*
-        velocidadRobotracerMsBase = 1.25;
-        aceleracionRobotracerMss = 10.0;
-        deceleracionRobotracerMss = 10.0;
-        velocidadRobotracerMsStraight = 4.0;
-        aceleracionCurvaRobotracerMss = 0.8;
-      */
       switch (valorConfig[modoConfig]) {
         case 0:
           set_RGB_color(0, 10, 10); // Cian
@@ -342,38 +328,7 @@ uint8_t get_base_speed(void) {
 }
 
 float get_base_ms_speed(void) {
-  if (get_config_track() == CONFIG_TRACK_LINEFOLLOWER) {
     return velocidadMsBase;
-  } else {
-    return velocidadRobotracerMsBase;
-  }
-}
-
-float get_robotracer_straight_ms_speed(void) {
-  return velocidadRobotracerMsStraight;
-}
-float get_base_turn_acceleration_mss(void) {
-  if (get_config_track() == CONFIG_TRACK_LINEFOLLOWER) {
-    return 0;
-  } else {
-    return aceleracionCurvaRobotracerMss;
-  }
-}
-
-float get_base_deceleration_mss(void) {
-  if (get_config_track() == CONFIG_TRACK_LINEFOLLOWER) {
-    return MAX_BREAK_MS2;
-  } else {
-    return deceleracionRobotracerMss;
-  }
-}
-
-float get_base_acceleration_mss(void) {
-  if (get_config_track() == CONFIG_TRACK_LINEFOLLOWER) {
-    return MAX_ACCEL_MS2;
-  } else {
-    return aceleracionRobotracerMss;
-  }
 }
 
 uint8_t get_base_fan_speed(void) {

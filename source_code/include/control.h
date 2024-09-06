@@ -5,7 +5,6 @@
 #include "delay.h"
 #include "encoders.h"
 #include "leds.h"
-#include "robotracer.h"
 #include "sensors.h"
 #include "stdio.h"
 #include "usart.h"
