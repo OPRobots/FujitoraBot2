@@ -22,7 +22,9 @@ void sys_tick_handler(void) {
   if (!is_esc_inited()) {
     init_esc();
   }
+  update_battery_voltage();
   update_encoder_readings();
+  update_gyro_readings();
   if (is_competicion_iniciada()) {
     update_log();
   }
@@ -31,8 +33,20 @@ void sys_tick_handler(void) {
 int main(void) {
   setup();
   show_battery_level();
+  // gyro_z_calibration();
   set_all_configs();
   eeprom_load();
+
+  do {
+    // set_RGB_rainbow();
+    // set_info_leds_wave(200);
+    // debug_from_config(DEBUG_TYPE_SENSORS_RAW);
+    // printf("%x\n", mpu_who_am_i());
+    // printf("%.4f\n", get_gyro_z_degrees());
+    // set_neon_fade(1024);
+    // set_fan_speed(25);
+    set_neon_fade((bool)gpio_get(GPIOB, GPIO15) ? 1024 : 0);
+  } while (true);
 
   do {
     check_menu_button();

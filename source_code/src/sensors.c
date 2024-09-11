@@ -17,6 +17,9 @@ static int32_t ticks_ultima_interseccion = 0;
 
 static uint32_t millis_emergency_stop = 0;
 
+static volatile uint32_t us_readings_start = 0;
+static volatile uint32_t us_readings_elapsed = 0;
+
 /**
  * @brief Inicializa los sensores cuando se enciende el robot sin calibrarlos a partir de una calibración previa
  *
@@ -66,15 +69,25 @@ uint16_t get_sensor_raw(uint8_t pos) {
   }
 }
 
+uint32_t get_us_readings_elapsed(void) {
+  return us_readings_elapsed;
+}
+
 void update_sensors_readings(void) {
-  sensores_raw[mux_index] = adc_raw[0];
-  sensores_raw[(MUX_CHANNELS) + mux_index] = adc_raw[1];
+  // ! Caution: Parece que al activar el ADC2 (lectura de batería) se desordenan los canales del ADC1 wtf?
+  sensores_raw[(MUX_CHANNELS) + mux_index] = adc_raw[0];
+  sensores_raw[mux_index] = adc_raw[1];
   sensores_raw[2 * (MUX_CHANNELS) + mux_index] = adc_raw[2];
+  // if(mux_index == 0){
+  //   us_readings_start = read_cycle_counter() * (float)MICROSECONDS_PER_SECOND / (float)SYSCLK_FREQUENCY_HZ;
+  // }else if(mux_index == 7){
+  //   us_readings_elapsed = (read_cycle_counter() * (float)MICROSECONDS_PER_SECOND / (float)SYSCLK_FREQUENCY_HZ) - us_readings_start;
+  // }
 
   mux_index = (mux_index + 1) % MUX_CHANNELS;
-  int c = GPIO15;
+  int c = GPIO13;
   int b = GPIO14;
-  int a = GPIO13;
+  int a = GPIO15;
   switch (mux_index) {
     case 0: // 000
       gpio_clear(GPIOC, a | b | c);
@@ -107,6 +120,7 @@ void update_sensors_readings(void) {
       gpio_set(GPIOC, a | b | c);
       break;
   }
+  delay_us(1);
 }
 
 uint16_t get_sensor_calibrated(uint8_t pos) {

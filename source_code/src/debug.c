@@ -16,10 +16,14 @@ int32_t arr_log[LOG_SIZE][LOG_FIELDS];
  *
  */
 static void debug_sensors_raw(void) {
-  if (get_clock_ticks() > last_print_debug + 50) {
+  if (get_clock_ticks() > last_print_debug + 125) {
 
-    for (int8_t sensor = get_sensors_num() - 1; sensor >= 0; sensor--) {
-      printf("%d\t", get_sensor_raw(sensor));
+    // printf("us: %ld - ", get_us_readings_elapsed());
+    for (int8_t sensor = 0; sensor < get_sensors_num(); sensor++) {
+      printf("%4d", get_sensor_raw(sensor));
+      if (sensor < get_sensors_num()-1) {
+        printf("|");
+      }
     }
     printf("\n");
     last_print_debug = get_clock_ticks();
@@ -107,7 +111,7 @@ static void check_debug_btn(void) {
 
 void debug_from_config(uint8_t type) {
   check_debug_btn();
-  if (debug_enabled) {
+  if (true) {
     switch (type) {
       case DEBUG_TYPE_SENSORS_RAW:
         debug_sensors_raw();

@@ -32,7 +32,7 @@
 #define MAX_BREAK_MS2 10.0
 
 /** Divisor de Voltage */
-#define VOLT_DIV_FACTOR 2.654
+#define VOLT_DIV_FACTOR 3.8673
 #define BATTERY_HIGH_LIMIT_VOLTAGE 12.6
 #define BATTERY_LOW_LIMIT_VOLTAGE 11.1
 

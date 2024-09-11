@@ -60,9 +60,9 @@ void warning_status_led(uint16_t ms) {
  * @param b
  */
 void set_RGB_color(uint32_t r, uint32_t g, uint32_t b) {
-  timer_set_oc_value(TIM1, TIM_OC4, r);
+  timer_set_oc_value(TIM1, TIM_OC2, r);
   timer_set_oc_value(TIM1, TIM_OC3, g);
-  timer_set_oc_value(TIM1, TIM_OC2, b);
+  timer_set_oc_value(TIM1, TIM_OC4, b);
 }
 
 void warning_RGB_color(uint32_t r, uint32_t g, uint32_t b, uint16_t ms) {
@@ -83,9 +83,9 @@ void set_RGB_rainbow(void) {
     rainbowRGB[rainbowColorDesc] -= 20;
     rainbowRGB[rainbowColorAsc] += 20;
     set_RGB_color(rainbowRGB[0], rainbowRGB[1], rainbowRGB[2]);
-    if (rainbowRGB[rainbowColorDesc] <= 0 || rainbowRGB[rainbowColorAsc] >= LEDS_MAX_PWM) {
+    if (rainbowRGB[rainbowColorDesc] <= 0 || rainbowRGB[rainbowColorAsc] >= (LEDS_MAX_PWM/4)) {
       rainbowRGB[rainbowColorDesc] = 0;
-      rainbowRGB[rainbowColorAsc] = LEDS_MAX_PWM;
+      rainbowRGB[rainbowColorAsc] = (LEDS_MAX_PWM/4);
       set_RGB_color(rainbowRGB[0], rainbowRGB[1], rainbowRGB[2]);
       rainbowColorDesc++;
       if (rainbowColorDesc > 2) {
@@ -123,7 +123,7 @@ void set_leds_battery_level(float battery_level) {
 
   float percent_battery_level = map(battery_level, BATTERY_LOW_LIMIT_VOLTAGE, BATTERY_HIGH_LIMIT_VOLTAGE, 0.0f, 100.0f);
   if (percent_battery_level <= 10) {
-    gpio_clear(GPIOA, GPIO0 | GPIO1 | GPIO2 | GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
+    gpio_clear(GPIOA, GPIO1 | GPIO2 | GPIO3 | GPIO5 | GPIO6 | GPIO7);
     gpio_clear(GPIOC, GPIO4 | GPIO5);
 
     if (get_clock_ticks() > lastTicksWarningBateria + 50) {

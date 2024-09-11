@@ -24,6 +24,7 @@ uint8_t *get_adc_channels(void);
 uint8_t get_sensors_num(void);
 uint8_t get_adc_channels_num(void);
 volatile uint16_t *get_adc_raw(void);
+uint32_t get_us_readings_elapsed(void);
 void update_sensors_readings(void);
 uint16_t get_sensor_raw(uint8_t pos);
 uint16_t get_sensor_calibrated(uint8_t pos);

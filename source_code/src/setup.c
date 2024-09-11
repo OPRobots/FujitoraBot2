@@ -90,8 +90,8 @@ static void setup_gpio(void) {
   gpio_set_af(GPIOB, GPIO_AF2, GPIO4 | GPIO5 | GPIO6 | GPIO7);
 
   // Salida digital LED's Menu
-  gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO0 | GPIO1 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
-  gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO10 | GPIO11 | GPIO12);
+  gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO0 | GPIO1 | GPIO2 | GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
+  gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO4 | GPIO5);
 
   // Salida PWM LEDS
   gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO8 | GPIO9 | GPIO10 | GPIO11);
@@ -135,6 +135,24 @@ static void setup_adc1(void) {
   adc_start_conversion_regular(ADC1);
 }
 
+
+/**
+ * @brief Configura el ADC2 para lectura del sensor de batería
+ * 
+ */
+static void setup_adc2(void) {
+  uint8_t lista_canales[16];
+
+  lista_canales[0] = ADC_CHANNEL13;
+  adc_power_off(ADC2);
+  adc_disable_scan_mode(ADC2);
+  adc_set_single_conversion_mode(ADC2);
+  adc_set_right_aligned(ADC2);
+  adc_set_sample_time_on_all_channels(ADC2, ADC_SMPR_SMP_15CYC);
+  adc_set_regular_sequence(ADC2, 1, lista_canales);
+  adc_power_on(ADC2);
+}
+
 static void setup_dma_adc1(void) {
   rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_ADC1EN);
   rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_DMA2EN);
@@ -169,7 +187,7 @@ void dma2_stream0_isr(void) {
 static void setup_leds_pwm(void) {
   timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
 
-  timer_set_prescaler(TIM1, rcc_apb2_frequency * 2 / 400000);
+  timer_set_prescaler(TIM1, rcc_apb2_frequency * 2 / 4000000 - 2);
   // 400000 es la frecuencia a la que irá el PWM 4 kHz, los dos últimos ceros no se porqué, pero son necesarios ya que rcc_apb2_frequency también añade dos ceros a mayores
   timer_set_repetition_counter(TIM1, 0);
   timer_enable_preload(TIM1);
@@ -304,15 +322,16 @@ void setup_spi_low_speed(void) {
 
 void setup(void) {
   setup_clock();
-  setup_gpio();
-  setup_usart();
+  setup_systick();
   setup_timer_priorities();
+  setup_usart();
+  setup_gpio();
+  setup_adc2();
+  setup_adc1();
+  setup_dma_adc1();
   setup_leds_pwm();
   setup_motors_pwm();
-  setup_dma_adc1();
-  setup_adc1();
   setup_pid_speed_timer();
   setup_quadrature_encoders();
-  setup_systick();
   setup_mpu();
 }
