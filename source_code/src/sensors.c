@@ -120,7 +120,7 @@ void update_sensors_readings(void) {
       gpio_set(GPIOC, a | b | c);
       break;
   }
-  delay_us(1);
+  delay_us(3);
 }
 
 uint16_t get_sensor_calibrated(uint8_t pos) {
@@ -147,18 +147,18 @@ void calibrate_sensors(void) {
   assign_sensors_calibrations();
   bool use_eeprom_calibration = true;
   while (!get_start_btn()) {
-    set_neon_heartbeat();
-    if (get_menu_mode_btn()) {
-      use_eeprom_calibration = !use_eeprom_calibration;
-      set_status_led(use_eeprom_calibration);
-      while (get_menu_mode_btn()) {
-      }
+  set_neon_heartbeat();
+  if (get_menu_mode_btn()) {
+  use_eeprom_calibration = !use_eeprom_calibration;
+  set_status_led(use_eeprom_calibration);
+  while (get_menu_mode_btn()) {
+  }
     }
     set_status_led(use_eeprom_calibration);
   }
   while (get_start_btn()) {
-    set_neon_heartbeat();
-    warning_status_led(75);
+  set_neon_heartbeat();
+  warning_status_led(75);
   }
 
   if (use_eeprom_calibration) {
@@ -260,7 +260,7 @@ void calibrate_sensors(void) {
   }
   set_RGB_color(0, 0, 0);
   delay(250);
-}
+  }
 
 int32_t get_sensor_line_position(void) {
   return line_position;
@@ -321,7 +321,7 @@ void calc_sensor_line_position(void) {
     ultimaLinea = get_clock_ticks();
   } else if (is_competicion_iniciada()) {
     if (get_clock_ticks() > (ultimaLinea + get_offtrack_time())) {
-      emergency_stop();
+            emergency_stop();
     }
     if (abs(line_position) < 800) {
       return;
