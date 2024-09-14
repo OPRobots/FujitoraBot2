@@ -2,7 +2,7 @@
 
 static bool escInited = false;
 static uint32_t escInitMillis = 0;
-static const uint16_t STOP_MOTORS_PWM = (uint16_t)(MOTORES_MAX_PWM * 0.75);
+static const uint16_t STOP_MOTORS_PWM = (uint16_t)(MOTORES_MAX_PWM * 0.5);
 static bool iniciado = false;
 static uint32_t millis_iniciado = 0;
 
@@ -47,22 +47,14 @@ void set_motors_speed(float velI, float velD) {
   float ocD = STOP_MOTORS_PWM;
 
   if (velI != 0) {
-    if (velI > 0) {
-      ocI += map(velI, 0, 100, 0, (MOTORES_MAX_PWM * 0.25));
-    } else {
-      ocI -= map(abs(velI), 0, 100, 0, (MOTORES_MAX_PWM * 0.25));
-    }
+    ocI += map(velI, 0, 100, 0, (MOTORES_MAX_PWM * 0.5));
   }
 
   if (velD != 0) {
-    if (velD > 0) {
-      ocD += map(velD, 0, 100, 0, (MOTORES_MAX_PWM * 0.25));
-    } else {
-      ocD -= map(abs(velD), 0, 100, 0, (MOTORES_MAX_PWM * 0.25));
-    }
+    ocD += map(velD, 0, 100, 0, (MOTORES_MAX_PWM * 0.5));
   }
-  timer_set_oc_value(TIM8, TIM_OC4, (uint32_t)ocI);
-  timer_set_oc_value(TIM8, TIM_OC2, (uint32_t)ocD);
+  timer_set_oc_value(TIM8, TIM_OC1, (uint32_t)ocI);
+  timer_set_oc_value(TIM8, TIM_OC3, (uint32_t)ocD);
 }
 
 void set_fan_speed(uint8_t vel) {
@@ -72,12 +64,8 @@ void set_fan_speed(uint8_t vel) {
 
   uint32_t ocF = STOP_MOTORS_PWM;
   if (vel != 0) {
-    if (vel > 0) {
-      ocF -= map(vel, 0, 100, 0, (MOTORES_MAX_PWM * 0.25));
-    } else {
-      ocF += map(abs(vel), 0, 100, 0, (MOTORES_MAX_PWM * 0.25));
-    }
+    ocF += map(abs(vel), 0, 100, 0, (MOTORES_MAX_PWM * 0.5));
   }
-  timer_set_oc_value(TIM8, TIM_OC1, ocF);
-  timer_set_oc_value(TIM8, TIM_OC3, ocF);
+  timer_set_oc_value(TIM8, TIM_OC2, ocF);
+  timer_set_oc_value(TIM8, TIM_OC4, ocF);
 }
