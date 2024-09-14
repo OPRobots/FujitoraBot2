@@ -256,14 +256,14 @@ void tim5_isr(void) {
 static void setup_quadrature_encoders(void) {
   timer_set_period(TIM4, 0xFFFF);
   timer_slave_set_mode(TIM4, TIM_SMCR_SMS_EM3);
-  timer_ic_set_input(TIM4, TIM_IC1, TIM_IC_IN_TI1);
-  timer_ic_set_input(TIM4, TIM_IC2, TIM_IC_IN_TI2);
+  timer_ic_set_input(TIM4, TIM_IC2, TIM_IC_IN_TI1);
+  timer_ic_set_input(TIM4, TIM_IC1, TIM_IC_IN_TI2);
   timer_enable_counter(TIM4);
 
   timer_set_period(TIM3, 0xFFFF);
   timer_slave_set_mode(TIM3, TIM_SMCR_SMS_EM3);
-  timer_ic_set_input(TIM3, TIM_IC1, TIM_IC_IN_TI1);
-  timer_ic_set_input(TIM3, TIM_IC2, TIM_IC_IN_TI2);
+  timer_ic_set_input(TIM3, TIM_IC2, TIM_IC_IN_TI1);
+  timer_ic_set_input(TIM3, TIM_IC1, TIM_IC_IN_TI2);
   timer_enable_counter(TIM3);
 }
 
