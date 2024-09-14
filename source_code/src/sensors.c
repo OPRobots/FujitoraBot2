@@ -146,19 +146,19 @@ uint16_t get_sensor_calibrated(uint8_t pos) {
 void calibrate_sensors(void) {
   assign_sensors_calibrations();
   bool use_eeprom_calibration = true;
-  while (!get_start_btn()) {
-  set_neon_heartbeat();
-  if (get_menu_mode_btn()) {
-  use_eeprom_calibration = !use_eeprom_calibration;
-  set_status_led(use_eeprom_calibration);
-  while (get_menu_mode_btn()) {
-  }
+  while (!get_menu_mode_btn()) {
+    set_status_heartbeat();
+    if (get_menu_down_btn()) {
+      use_eeprom_calibration = !use_eeprom_calibration;
+      set_status_led(use_eeprom_calibration);
+      while (get_menu_down_btn()) {
+      }
     }
     set_status_led(use_eeprom_calibration);
   }
-  while (get_start_btn()) {
-  set_neon_heartbeat();
-  warning_status_led(75);
+  while (get_menu_mode_btn()) {
+    set_status_heartbeat();
+    warning_status_led(75);
   }
 
   if (use_eeprom_calibration) {
@@ -171,7 +171,7 @@ void calibrate_sensors(void) {
 
     uint8_t countSensorsChecked = 0;
     uint32_t millisSensorsChecked = 0;
-    while (!get_start_btn() && (countSensorsChecked < get_sensors_num() || get_clock_ticks() - millisSensorsChecked < 500)) {
+    while (!get_menu_mode_btn() && (countSensorsChecked < get_sensors_num() || get_clock_ticks() - millisSensorsChecked < 500)) {
       for (uint8_t sensor = 0; sensor < get_sensors_num(); sensor++) {
         if (abs(get_sensor_raw(sensor) - sensores_min[sensor]) < 200) {
           sensorsMinChecked[sensor] = true;
@@ -240,7 +240,7 @@ void calibrate_sensors(void) {
       set_RGB_color(0, 100, 0);
       delay(500);
     } else {
-      while (!get_start_btn()) {
+      while (!get_menu_mode_btn()) {
         if (calibrationOK && marksOK) {
           set_RGB_color(0, 100, 0);
         } else if (!calibrationOK) {
@@ -249,7 +249,7 @@ void calibrate_sensors(void) {
           set_RGB_color(100, 20, 0);
         }
       }
-      while (get_start_btn()) {
+      while (get_menu_mode_btn()) {
         if (calibrationOK) {
           set_RGB_color(0, 100, 0);
         } else {
@@ -260,7 +260,7 @@ void calibrate_sensors(void) {
   }
   set_RGB_color(0, 0, 0);
   delay(250);
-  }
+}
 
 int32_t get_sensor_line_position(void) {
   return line_position;
@@ -321,7 +321,7 @@ void calc_sensor_line_position(void) {
     ultimaLinea = get_clock_ticks();
   } else if (is_competicion_iniciada()) {
     if (get_clock_ticks() > (ultimaLinea + get_offtrack_time())) {
-            emergency_stop();
+      emergency_stop();
     }
     if (abs(line_position) < 800) {
       return;

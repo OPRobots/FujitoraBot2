@@ -46,13 +46,13 @@ static void debug_sensors_calibrated(void) {
 
 static void debug_all_leds(void) {
   set_RGB_rainbow();
-  set_neon_heartbeat();
+  set_status_heartbeat();
   warning_status_led(125);
 }
 
 static void debug_digital_io(void) {
   if (get_clock_ticks() > last_print_debug + 250) {
-    printf("BTN: %d CFM: %d CFU: %d CFD: %d\n", get_start_btn(), get_menu_mode_btn(), get_menu_up_btn(), get_menu_down_btn());
+    printf("BTN: %d CFM: %d CFU: %d CFD: %d\n", get_ir_start(), get_menu_mode_btn(), get_menu_up_btn(), get_menu_down_btn());
     last_print_debug = get_clock_ticks();
   }
 }
@@ -96,16 +96,16 @@ static void debug_fans(void) {
 }
 
 static void check_debug_btn(void) {
-  if (get_start_btn()) {
+  if (get_menu_mode_btn()) {
     debug_enabled = !debug_enabled;
-    while (get_start_btn()) {
+    while (get_menu_mode_btn()) {
     }
     delay(50);
   }
   if (debug_enabled) {
-    set_neon_heartbeat();
+    set_status_heartbeat();
   } else {
-    set_neon_fade(0);
+    set_status_fade(0);
   }
 }
 
