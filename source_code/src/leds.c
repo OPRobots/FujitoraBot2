@@ -19,6 +19,8 @@ static bool lastWarningRGBState = false;
 static uint32_t lastTicksWave = 0;
 static uint8_t currentIndexWave = 0;
 
+static uint32_t lastTicksInfoLedsBlink = 0;
+
 static uint32_t lastTicksWarningBattery = 0;
 
 /**
@@ -29,9 +31,9 @@ static uint32_t lastTicksWarningBattery = 0;
 void set_status_led(bool state) {
   statusLedState = state;
   if (state) {
-    timer_set_oc_value(TIM1, TIM_OC2, LEDS_MAX_PWM);
+    timer_set_oc_value(TIM1, TIM_OC1, LEDS_MAX_PWM);
   } else {
-    timer_set_oc_value(TIM1, TIM_OC2, 0);
+    timer_set_oc_value(TIM1, TIM_OC1, 0);
   }
 }
 
@@ -119,16 +121,8 @@ void set_RGB_rainbow(void) {
   }
 }
 
-void set_leds_battery_level(float voltage) {
+void set_leds_battery_level(float battery_level) {
   // C4 - A3 - A2 - A1 - A0 - A4 - A5 - A6 - A7 - C5
-
-  float battery_level = 0;
-  if (voltage >= BATTERY_3S_LOW_LIMIT_VOLTAGE && voltage <= BATTERY_3S_HIGH_LIMIT_VOLTAGE) {
-    battery_level = map(battery_level, BATTERY_3S_LOW_LIMIT_VOLTAGE, BATTERY_3S_HIGH_LIMIT_VOLTAGE, 0.0f, 100.0f);
-  } else if (voltage >= BATTERY_2S_LOW_LIMIT_VOLTAGE && voltage <= BATTERY_2S_HIGH_LIMIT_VOLTAGE) {
-    battery_level = map(battery_level, BATTERY_2S_LOW_LIMIT_VOLTAGE, BATTERY_2S_HIGH_LIMIT_VOLTAGE, 0.0f, 100.0f);
-  }
-
   if (battery_level <= 10) {
     gpio_clear(GPIOA, GPIO1 | GPIO2 | GPIO3 | GPIO5 | GPIO6 | GPIO7);
     gpio_clear(GPIOC, GPIO4 | GPIO5);
@@ -173,7 +167,6 @@ void set_leds_battery_level(float voltage) {
 }
 
 void set_info_led(uint8_t index, bool state) {
-
   switch (index) {
     case 0:
       if (state) {
@@ -275,6 +268,15 @@ void set_info_leds_wave(int ms) {
   }
 }
 
+void set_info_leds_blink(int ms) {
+  if (get_clock_ticks() > lastTicksInfoLedsBlink + ms) {
+    gpio_toggle(GPIOA, GPIO5 | GPIO6 | GPIO7);
+    gpio_toggle(GPIOC, GPIO4 | GPIO5);
+    gpio_toggle(GPIOB, GPIO0 | GPIO1 | GPIO2);
+    lastTicksInfoLedsBlink = get_clock_ticks();
+  }
+}
+
 void set_info_leds(void) {
 
   gpio_set(GPIOA, GPIO0 | GPIO1 | GPIO2 | GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
@@ -282,14 +284,12 @@ void set_info_leds(void) {
 }
 
 void clear_info_leds(void) {
-
   gpio_clear(GPIOA, GPIO0 | GPIO1 | GPIO2 | GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
   gpio_clear(GPIOC, GPIO4 | GPIO5);
 }
 
 void all_leds_clear(void) {
-  set_status_fade(0);
-  set_RGB_color(0, 0, 0);
   set_status_led(false);
+  set_RGB_color(0, 0, 0);
   clear_info_leds();
 }

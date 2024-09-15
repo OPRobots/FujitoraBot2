@@ -135,10 +135,9 @@ static void setup_adc1(void) {
   adc_start_conversion_regular(ADC1);
 }
 
-
 /**
  * @brief Configura el ADC2 para lectura del sensor de batería
- * 
+ *
  */
 static void setup_adc2(void) {
   uint8_t lista_canales[16];
@@ -179,7 +178,7 @@ static void setup_dma_adc1(void) {
 
 void dma2_stream0_isr(void) {
   if (dma_get_interrupt_flag(DMA2, DMA_STREAM0, DMA_TCIF)) {
-    update_sensors_readings();
+    sensors_update_mux_readings();
     dma_clear_interrupt_flags(DMA2, DMA_STREAM0, DMA_TCIF);
   }
 }
@@ -221,7 +220,7 @@ static void setup_motors_pwm(void) {
   timer_set_repetition_counter(TIM8, 0);
   timer_enable_preload(TIM8);
   timer_continuous_mode(TIM8);
-  timer_set_period(TIM8, MOTORES_MAX_PWM);
+  timer_set_period(TIM8, MOTORS_MAX_PWM);
 
   timer_set_oc_mode(TIM8, TIM_OC1, TIM_OCM_PWM1);
   timer_set_oc_mode(TIM8, TIM_OC2, TIM_OCM_PWM1);
@@ -233,7 +232,7 @@ static void setup_motors_pwm(void) {
   timer_enable_counter(TIM8);
 }
 
-static void setup_pid_speed_timer(void) {
+static void setup_main_loop_timer(void) {
   rcc_periph_reset_pulse(RST_TIM5);
   timer_set_mode(TIM5, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_prescaler(TIM5, ((rcc_apb1_frequency * 2) / 1000000 - 2));
@@ -242,14 +241,13 @@ static void setup_pid_speed_timer(void) {
   timer_set_period(TIM5, 1024);
 
   timer_enable_counter(TIM5);
-  // El timer se iniciará en el arranque
-  // timer_enable_irq(TIM5, TIM_DIER_CC1IE);
+  timer_enable_irq(TIM5, TIM_DIER_CC1IE);
 }
 
 void tim5_isr(void) {
   if (timer_get_flag(TIM5, TIM_SR_CC1IF)) {
     timer_clear_flag(TIM5, TIM_SR_CC1IF);
-    pid_speed_timer_custom_isr();
+    control_loop();
   }
 }
 
@@ -281,7 +279,7 @@ static void setup_quadrature_encoders(void) {
  * - Frame format: MSB first.
  *
  * NSS is configured to be managed by software.
- * 
+ *
  * Reference: https://github.com/Bulebots/meiga
  */
 static void setup_spi(uint8_t speed_div) {
@@ -299,7 +297,7 @@ static void setup_spi(uint8_t speed_div) {
  * @brief Setup SPI for gyroscope read, less than 20 MHz.
  *
  * The clock baudrate is 84 MHz / 8 = 10.5 MHz.
- * 
+ *
  * Reference: https://github.com/Bulebots/meiga
  */
 void setup_spi_high_speed(void) {
@@ -311,14 +309,13 @@ void setup_spi_high_speed(void) {
  * @brief Setup SPI for gyroscope Write, less than 1 MHz.
  *
  * The clock baudrate is 84 MHz / 128 = 0.65625 MHz.
- * 
+ *
  * Reference: https://github.com/Bulebots/meiga
  */
 void setup_spi_low_speed(void) {
   setup_spi(SPI_CR1_BAUDRATE_FPCLK_DIV_128);
   delay(100);
 }
-
 
 void setup(void) {
   setup_clock();
@@ -331,7 +328,7 @@ void setup(void) {
   setup_dma_adc1();
   setup_leds_pwm();
   setup_motors_pwm();
-  setup_pid_speed_timer();
+  setup_main_loop_timer();
   setup_quadrature_encoders();
   setup_mpu();
 }

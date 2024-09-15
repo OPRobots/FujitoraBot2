@@ -15,6 +15,7 @@
 bool is_esc_inited(void);
 void init_esc(void);
 void set_motors_speed(float velI, float velD);
+void set_motors_pwm(uint32_t pwm_left, uint32_t pwm_right);
 void set_fan_speed(uint8_t vel);
 
 #endif

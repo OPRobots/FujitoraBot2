@@ -3,13 +3,11 @@
 bool debug_enabled = false;
 uint32_t last_print_debug = 0;
 
-#define LOG_SIZE 1000
-#define LOG_FIELDS 2
-#define LOG_INTERVAL 1
-uint32_t last_log_millis = 0;
-uint16_t arr_log_index = 0;
-
-int32_t arr_log[LOG_SIZE][LOG_FIELDS];
+static void debug_macroarray(void) {
+  macroarray_print();
+  debug_enabled = false;
+  menu_config_reset_values();
+}
 
 /**
  * @brief Imprime los valores de los sensores sin aplicar ninguna corrección
@@ -21,7 +19,7 @@ static void debug_sensors_raw(void) {
     // printf("us: %ld - ", get_us_readings_elapsed());
     for (int8_t sensor = 0; sensor < get_sensors_num(); sensor++) {
       printf("%4d", get_sensor_raw(sensor));
-      if (sensor < get_sensors_num()-1) {
+      if (sensor < get_sensors_num() - 1) {
         printf("|");
       }
     }
@@ -59,18 +57,15 @@ static void debug_digital_io(void) {
 
 static void debug_posicion_correccion(void) {
   if (get_clock_ticks() > last_print_debug + 50) {
-
-    calc_sensor_line_position();
-    float correccion_velocidad = calc_pid_correction(get_sensor_line_position());
-
-    printf("%.3f - %ld\n", correccion_velocidad, get_sensor_line_position());
+    sensors_update_line_position();
+    printf("%ld\n", get_sensor_line_position());
     last_print_debug = get_clock_ticks();
   }
 }
 
 static void debug_line_position(void) {
   if (get_clock_ticks() > last_print_debug + 50) {
-    calc_sensor_line_position();
+    sensors_update_line_position();
     printf("%d\t%ld\t%d\n", -(get_sensors_num() + 2) * 1000 / 2, get_sensor_line_position(), (get_sensors_num() + 2) * 1000 / 2);
     last_print_debug = get_clock_ticks();
   }
@@ -95,24 +90,40 @@ static void debug_fans(void) {
   }
 }
 
-static void check_debug_btn(void) {
+static void check_debug_active(void) {
   if (get_menu_mode_btn()) {
-    debug_enabled = !debug_enabled;
+    uint32_t pressed_ms = get_clock_ticks();
     while (get_menu_mode_btn()) {
+    }
+    if (get_clock_ticks() - pressed_ms <= 500) {
+      debug_enabled = !debug_enabled;
+    } else {
+      debug_enabled = false;
     }
     delay(50);
   }
   if (debug_enabled) {
-    set_status_heartbeat();
+    set_RGB_rainbow();
   } else {
-    set_status_fade(0);
+    set_RGB_color(0, 0, 0);
   }
 }
 
+bool is_debug_enabled(void) {
+  return debug_enabled;
+}
+
 void debug_from_config(uint8_t type) {
-  check_debug_btn();
-  if (true) {
+  if (type != DEBUG_NONE) {
+    check_debug_active();
+  } else {
+    debug_enabled = false;
+  }
+  if (is_debug_enabled()) {
     switch (type) {
+      case DEBUG_MACROARRAY:
+        debug_macroarray();
+        break;
       case DEBUG_TYPE_SENSORS_RAW:
         debug_sensors_raw();
         break;
@@ -142,6 +153,7 @@ void debug_from_config(uint8_t type) {
         break;
     }
   } else {
+    set_RGB_color(0, 0, 0);
     switch (type) {
       case DEBUG_TYPE_MOTORS:
         set_motors_speed(0, 0);
@@ -158,34 +170,7 @@ void debug_from_config(uint8_t type) {
 
 void debug_sensors_calibration(void) {
   if (get_clock_ticks() > last_print_debug + 1000) {
-    print_sensors_calibrations();
+    sensors_print_calibration();
     last_print_debug = get_clock_ticks();
-  }
-}
-
-void update_log(void) {
-  if (get_clock_ticks() > last_log_millis + LOG_INTERVAL) {
-    if (arr_log_index >= LOG_SIZE - 1) {
-      for (uint16_t i = 0; i < LOG_SIZE - 1; i++) {
-        for (uint16_t j = 0; j < LOG_FIELDS - 1; j++) {
-          arr_log[i][j] = arr_log[i + 1][j];
-        }
-      }
-    }
-
-    arr_log[arr_log_index][0] = get_sensor_line_position();
-    arr_log[arr_log_index][1] = get_encoder_avg_speed() * 100;
-
-    if (arr_log_index < LOG_SIZE - 1) {
-      arr_log_index++;
-    }
-    last_log_millis = get_clock_ticks();
-  }
-}
-
-void debug_log(void) {
-  printf("%s;%s;%s\n", "time", "line_position", "avg_speed_ms");
-  for (uint16_t i = 0; i <= arr_log_index; i++) {
-    printf("%d;%ld;%ld\n", i * LOG_INTERVAL, arr_log[i][0], arr_log[i][1]);
   }
 }

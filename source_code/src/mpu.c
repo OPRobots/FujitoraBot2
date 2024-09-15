@@ -120,8 +120,7 @@ void setup_mpu(void) {
  */
 static int16_t mpu_read_gyro_z_raw(void) {
 
-  return ((mpu_read_register(MPU_GYRO_ZOUT_H) << BYTE) |
-          mpu_read_register(MPU_GYRO_ZOUT_L));
+  return ((mpu_read_register(MPU_GYRO_ZOUT_H) << BYTE) | mpu_read_register(MPU_GYRO_ZOUT_L));
 }
 
 static void set_gyro_z_calibration(int16_t zout_c2) {
@@ -150,35 +149,30 @@ void gyro_z_calibration(void) {
   deg_integ = 0;
   for (i = 0; i < MPU_CAL_SAMPLE_NUM; i++) {
     set_info_leds_wave(35);
-    zout_av = ((float)mpu_read_gyro_z_raw() + zout_av) /
-              MPU_AVERAGE_FACTOR;
+    zout_av = ((float)mpu_read_gyro_z_raw() + zout_av) / MPU_AVERAGE_FACTOR;
     delay_us(MPU_CAL_SAMPLE_US);
   }
   zout_c2 = -(int16_t)(zout_av * MPU_COMPLEMENT_2_FACTOR);
 
-  // int16_t eeprom_zout_c2;
-  // int16_t *eeprom_stored_data = eeprom_get_data();
-  // eeprom_zout_c2 = eeprom_stored_data[1];
-  // if (eeprom_stored_data[0] == 0) {
-  //   eeprom_zout_c2 = -eeprom_zout_c2;
-  // }
-  // zout_c2 += eeprom_zout_c2;
+  int16_t eeprom_zout_c2;
+  int16_t *eeprom_stored_data = eeprom_get_data();
+  eeprom_zout_c2 = eeprom_stored_data[1];
+  if (eeprom_stored_data[0] == 0) {
+    eeprom_zout_c2 = -eeprom_zout_c2;
+  }
+  zout_c2 += eeprom_zout_c2;
 
   set_gyro_z_calibration(zout_c2);
 
-  // int16_t eeprom_data[2] = {zout_c2 >= 0 ? 1 : 0, abs(zout_c2)};
-  // eeprom_set_data(DATA_INDEX_GYRO_Z, eeprom_data, 2);
+  int16_t eeprom_data[1] = {zout_c2};
+  eeprom_set_data(DATA_INDEX_GYRO_Z, eeprom_data, 1);
 }
 
 void mpu_load_eeprom(void) {
-  // int16_t zout_c2;
-  // int16_t *eeprom_data = eeprom_get_data();
-  // zout_c2 = eeprom_data[1];
-  // if (eeprom_data[0] == 0) {
-  //   zout_c2 = -zout_c2;
-  // }
-  // set_gyro_z_calibration(zout_c2);
-  // mpu_set_updating(true);
+  int16_t zout_c2;
+  int16_t *eeprom_data = eeprom_get_data();
+  zout_c2 = eeprom_data[DATA_INDEX_GYRO_Z];
+  set_gyro_z_calibration(zout_c2);
 }
 
 /**
@@ -217,8 +211,7 @@ int16_t get_gyro_z_raw(void) {
  * @brief Get gyroscope's Z-axis angular speed in radians per second.
  */
 float get_gyro_z_radps(void) {
-  return ((float)gyro_z_raw * MPU_DPS_TO_RADPS /
-          MPU_GYRO_SENSITIVITY_2000_DPS);
+  return ((float)gyro_z_raw * MPU_DPS_TO_RADPS / MPU_GYRO_SENSITIVITY_2000_DPS);
 }
 
 /**
@@ -226,66 +219,4 @@ float get_gyro_z_radps(void) {
  */
 float get_gyro_z_dps(void) {
   return ((float)gyro_z_raw / MPU_GYRO_SENSITIVITY_2000_DPS);
-}
-
-#define KP_GYRO 10
-#define KD_GYRO 30
-#define KI_GYRO 5
-static float sumError = 0;
-static float errorAnterior = 0;
-
-void set_z_angle(float angle) {
-  if (!mpu_updating) {
-    return;
-  }
-  float error = angle - deg_integ;
-  float p = 0;
-  float i = 0;
-  float correccion = 0;
-  if (abs(error) >= 1) {
-    p = KP_GYRO * error;
-    if (abs(sumError) < 10) {
-      sumError += error;
-      i = sumError * KI_GYRO;
-    }
-    correccion = p + i;
-    if (correccion > 200) {
-      correccion = 200;
-    } else if (correccion < -200) {
-      correccion = -200;
-    }
-    //TODO: pasar a set_motors_pwm
-    set_motors_speed(correccion, -(correccion));
-  } else {
-    sumError = 0;
-    set_motors_speed(0, 0);
-  }
-}
-void keep_z_angle(void) {
-  if (!mpu_updating) {
-    return;
-  }
-  float error = -deg_integ; //((int16_t)(deg_integ * -100)) / 100;
-  float p = 0;
-  float i = 0;
-  float d = 0;
-  float correccion = 0;
-
-  if (abs(error) > 0.1) {
-    p = KP_GYRO * error;
-    d = KD_GYRO * (error - errorAnterior);
-    errorAnterior = error;
-    if (abs(sumError) < 10) {
-      sumError += error;
-      i = sumError * KI_GYRO;
-    }
-    // printf("%d \n", (int16_t)(sumError * 100));
-    correccion = p + i + d;
-    // correccion = constrain(correccion, -200, 200);
-    set_motors_speed(/* 60+ */ correccion, /* 80 */ -correccion);
-  } else {
-    sumError = 0;
-    errorAnterior = error;
-    set_motors_speed(/* 6 */ 0, /* 8 */ 0);
-  }
 }

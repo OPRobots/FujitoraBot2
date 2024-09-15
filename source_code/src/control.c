@@ -1,71 +1,107 @@
 #include "control.h"
 
-static float velocidad = 0;
-static int32_t velocidadIdeal = 0;
-static float velocidadIdealMs = 0.0;
-static float velocidadObjetivoMs = 0.0;
-static float accelerationMss = 0.0;
-static float decelerationMss = 0.0;
-static int32_t velocidadVentiladorIdeal = 0;
-static bool fullVelocidadVentilador = false;
-static bool competicionIniciada = false;
-static uint32_t competicionIniciadaMillis = 0;
-static volatile float correccion_velocidad = 0;
-static volatile float error_anterior = 0;
-static volatile float suma_error_ms = 0;
-static volatile float error_anterior_ms = 0;
+static bool race_started = false;
+static uint32_t race_start_ms = 0;
+static uint32_t race_finish_ms = 0;
+static uint32_t emergency_stop_ms = 0;
+static bool ir_before_start = false;
 
-static uint32_t resume_speed_ms = 0;
+static volatile int32_t target_linear_speed = 0;
+static volatile int32_t ideal_linear_speed = 0;
+
+static volatile int32_t target_linear_speed_percent = 0;
+static volatile float ideal_linear_speed_percent = 0;
+
+static volatile float ideal_angular_speed = 0.0;
+
+static volatile int32_t target_fan_speed = 0;
+static volatile float ideal_fan_speed = 0;
+static volatile float fan_speed_accel = 0;
+
+static volatile float linear_error;
+static volatile float last_linear_error;
+
+static volatile float angular_error;
+static volatile float last_angular_error;
+
+static volatile bool mpu_correction_enabled = false;
+static volatile bool line_sensors_correction_enabled = false;
+
+static volatile float line_sensors_error;
+static volatile float sum_line_sensors_error;
+static volatile float last_line_sensors_error;
+
+static volatile float voltage_left;
+static volatile float voltage_right;
+static volatile int32_t pwm_left;
+static volatile int32_t pwm_right;
 
 /**
- * @brief Calcula la corrección de posición en línea mediante PID
+ * @brief Convierte un valor de voltaje dado a su correspondiente PWM
  *
- * @param posicion Posición actual actual del robot sobre la línea
- *
- * @return float Corrección aplicada sobre la velocidad
+ * @param voltage
+ * @return int32_t PWM a aplicar al motor
  */
-
-float calc_pid_correction(int32_t posicion) {
-  float p = 0;
-  float i = 0;
-  float d = 0;
-  int32_t error = 0 - posicion;
-
-  p = KP * error;
-  d = KD * (error - error_anterior);
-  error_anterior = error;
-
-  return p + i + d;
+static int32_t voltage_to_motor_pwm(float voltage) {
+  if (voltage <= 0) { // TODO: definir un voltage mínimo de funcionamiento
+    return 0;
+  } else {
+    return voltage / /* 12.0  */ get_battery_voltage() * (MOTORS_MAX_PWM / 2);
+  }
 }
 
-/**
- * @brief Calcula la corrección de la velocidad en m/s mediante PID
- *
- * @param velocidadActualMs Velocidad actual en m/s obtenida de los encoders
- *
- * @return float Velocidad aplicada a los motores en %
- */
+static void update_ideal_linear_speed(void) {
+  switch (menu_run_get_control_strategy()) {
+    case CONTROL_ENCODERS:
+      if (ideal_linear_speed < target_linear_speed) {
+        ideal_linear_speed += get_kinematics().linear_accel / CONTROL_FREQUENCY_HZ;
+        if (ideal_linear_speed > target_linear_speed) {
+          ideal_linear_speed = target_linear_speed;
+        }
+      } else if (ideal_linear_speed > target_linear_speed) {
+        ideal_linear_speed -= get_kinematics().linear_break / CONTROL_FREQUENCY_HZ;
+        if (ideal_linear_speed < target_linear_speed) {
+          ideal_linear_speed = target_linear_speed;
+        }
+      }
+      break;
+    case CONTROL_PWM:
+      if (ideal_linear_speed_percent < target_linear_speed_percent) {
+        ideal_linear_speed_percent += (float)(get_kinematics().linear_accel_percent) / CONTROL_FREQUENCY_HZ;
+        if (ideal_linear_speed_percent > target_linear_speed_percent) {
+          ideal_linear_speed_percent = target_linear_speed_percent;
+        }
+      } else if (ideal_linear_speed_percent > target_linear_speed_percent) {
+        ideal_linear_speed_percent -= get_kinematics().linear_break_percent / CONTROL_FREQUENCY_HZ;
+        if (ideal_linear_speed_percent < target_linear_speed_percent) {
+          ideal_linear_speed_percent = target_linear_speed_percent;
+        }
+      }
 
-float calc_ms_pid_correction(float velocidadActualMs) {
-  float p = 0;
-  float i = 0;
-  float d = 0;
-  float error_ms = velocidadObjetivoMs - velocidadActualMs;
-
-  if (velocidadObjetivoMs <= 1.0 && velocidadActualMs < velocidadIdealMs && velocidadIdealMs > 0) {
-    if (KI_MS * suma_error_ms < 20.0) {
-      suma_error_ms += error_ms;
-    } else {
-    }
-  } else {
-    suma_error_ms += error_ms;
+      break;
   }
-  // p = KP_MS * error_ms;
-  i = KI_MS * suma_error_ms;
-  // d = KD_MS * (error_ms - error_anterior_ms);
-  error_anterior_ms = error_ms;
+}
 
-  return p + i + d;
+static void update_fan_speed(void) {
+  if (ideal_fan_speed < target_fan_speed) {
+    ideal_fan_speed += fan_speed_accel / CONTROL_FREQUENCY_HZ;
+    if (ideal_fan_speed > target_fan_speed) {
+      ideal_fan_speed = target_fan_speed;
+    }
+  } else if (ideal_fan_speed > target_fan_speed) {
+    ideal_fan_speed -= fan_speed_accel / CONTROL_FREQUENCY_HZ;
+    if (ideal_fan_speed < target_fan_speed) {
+      ideal_fan_speed = target_fan_speed;
+    }
+  }
+}
+
+static float get_measured_linear_speed(void) {
+  return (get_encoder_left_speed() + get_encoder_right_speed()) / 2.0f;
+}
+
+static float get_measured_angular_speed(void) {
+  return -get_gyro_z_radps();
 }
 
 /**
@@ -74,8 +110,8 @@ float calc_ms_pid_correction(float velocidadActualMs) {
  * @return bool
  */
 
-bool is_competicion_iniciada(void) {
-  return competicionIniciada;
+bool is_race_started(void) {
+  return race_started;
 }
 
 /**
@@ -84,199 +120,172 @@ bool is_competicion_iniciada(void) {
  * @param state Estado actual del robot
  */
 
-void set_competicion_iniciada(bool state) {
-  competicionIniciada = state;
+void set_race_started(bool state) {
+  race_started = state;
   if (state) {
-    competicionIniciadaMillis = get_clock_ticks();
+    race_start_ms = get_clock_ticks();
   } else {
-    competicionIniciadaMillis = 0;
+    menu_reset();
+    race_finish_ms = get_clock_ticks();
   }
 }
 
-uint32_t get_competicion_iniciada_millis(void) {
-  return competicionIniciadaMillis;
+uint32_t get_race_started_ms(void) {
+  return race_start_ms;
+}
+
+bool check_start_run(void) {
+  if (menu_run_can_start()) {
+    if (get_ir_start() && !ir_before_start) {
+      return true;
+    } else if (get_menu_mode_btn()) {
+      uint32_t ms_pressed = get_clock_ticks();
+      while (get_menu_mode_btn()) {
+        if (get_clock_ticks() - ms_pressed > 1000) {
+          warning_status_led(25);
+        }
+      }
+      if (get_clock_ticks() - ms_pressed > 1200) {
+        return true;
+      }
+    }
+  } else {
+    ir_before_start = get_ir_start();
+  }
+  return false;
+}
+
+void set_mpu_correction(bool enabled) {
+  mpu_correction_enabled = enabled;
+}
+
+void set_line_sensors_correction(bool enabled) {
+  line_sensors_correction_enabled = enabled;
+}
+
+void reset_control_errors(void) {
+  line_sensors_error = 0;
+  sum_line_sensors_error = 0;
+  last_line_sensors_error = 0;
+}
+
+void reset_control_speed(void) {
+  target_linear_speed = 0;
+  ideal_linear_speed = 0;
+  target_linear_speed_percent = 0;
+  ideal_linear_speed_percent = 0;
+  ideal_angular_speed = 0.0;
+  voltage_left = 0;
+  voltage_right = 0;
+  pwm_left = 0;
+  pwm_right = 0;
+}
+
+void reset_control_all(void) {
+  reset_control_errors();
+  reset_control_speed();
+}
+
+void set_target_linear_speed(int32_t linear_speed) {
+  target_linear_speed = linear_speed;
+}
+
+int32_t get_ideal_linear_speed(void) {
+  return ideal_linear_speed;
+}
+
+void set_target_linear_speed_percent(int32_t linear_speed_percent) {
+  target_linear_speed_percent = linear_speed_percent;
+}
+
+void set_target_fan_speed(int32_t fan_speed, int32_t ms) {
+  target_fan_speed = fan_speed;
+  fan_speed_accel = (fan_speed - ideal_fan_speed) * CONTROL_FREQUENCY_HZ / ms;
 }
 
 /**
  * @brief Función ISR del Timer5 encargada del control de posición y velocidad
  *
  */
-void pid_speed_timer_custom_isr(void) {
-  calc_sensor_line_position();
-  correccion_velocidad = calc_pid_correction(get_sensor_line_position());
-
-  if (is_competicion_iniciada()) {
-    if (get_config_speed() == CONFIG_SPEED_MS) {
-      if (velocidadIdealMs > 0 || velocidadObjetivoMs > 0 || velocidad > 0) {
-        if (velocidadObjetivoMs < velocidadIdealMs) {
-          if (velocidadObjetivoMs < 1 && velocidadIdealMs > 0) {
-            velocidadObjetivoMs += MIN_ACCEL_MS2 / 1000.0;
-          } else {
-            velocidadObjetivoMs += accelerationMss / 1000.0;
-          }
-        } else if (velocidadObjetivoMs > velocidadIdealMs) {
-          if (velocidadObjetivoMs < 1 && velocidadIdealMs > 0) {
-            velocidadObjetivoMs -= MIN_ACCEL_MS2 / 1000.0;
-          } else {
-            velocidadObjetivoMs -= decelerationMss / 1000.0;
-          }
-        }
-        if (velocidadIdealMs != velocidadObjetivoMs && abs(velocidadIdealMs * 100 - velocidadObjetivoMs * 100) < 2) {
-          velocidadObjetivoMs = velocidadIdealMs;
-        }
-        if (get_encoder_avg_speed() > 0.25) {
-          velocidad = MIN_SPEED_PERCENT + calc_ms_pid_correction(get_encoder_avg_speed());
-          if (get_encoder_avg_speed() > 0.5) {
-            fullVelocidadVentilador = true;
-          }
-        } else {
-          velocidad = 22;
-          suma_error_ms = 0;
-        }
-        if (velocidad > 100) {
-          velocidad = 100;
-        } else if (velocidad < 0) {
-          suma_error_ms = 0;
-          velocidad = 0;
-        }
-        // if (get_clock_ticks() % 20 == 0) {
-        //   debug_accel();
-        // }
-      } else {
-        velocidad = 0;
-        set_motors_speed(0, 0);
-        set_fan_speed(0);
-        return;
-      }
-    } else {
-      if (velocidadIdeal > 0) {
-        if (velocidad < velocidadIdeal) {
-          if (velocidad < MIN_SPEED_PERCENT) {
-            velocidad = 15;
-          }
-          float increment_percent = ((get_clock_ticks() - resume_speed_ms) / 1000.0) * MAX_ACCEL_PERCENT;
-          velocidad = 15 + increment_percent;
-        } else if (velocidad != velocidadIdeal) {
-          velocidad = velocidadIdeal;
-        }
-        if (velocidad > 30) {
-          fullVelocidadVentilador = true;
-        }
-      } else {
-        velocidad = 0;
-        set_motors_speed(0, 0);
-        set_fan_speed(0);
-        return;
-      }
-    }
-
-    float velI = velocidad - correccion_velocidad;
-    float velD = velocidad + correccion_velocidad;
-
-    if (velD < MIN_SPEED_PERCENT) {
-      // velI += MIN_SPEED_PERCENT - velD;
-      velD = MIN_SPEED_PERCENT;
-    } else if (velD > 100) {
-      // velI -= velD - 100;
-      velD = 100;
-    }
-    if (velI < MIN_SPEED_PERCENT) {
-      // velD += MIN_SPEED_PERCENT - velI;
-      velI = MIN_SPEED_PERCENT;
-    } else if (velI > 100) {
-      // velD -= velI - 100;
-      velI = 100;
-    }
-    set_motors_speed(velD, velI);
-    set_fan_speed(fullVelocidadVentilador ? velocidadVentiladorIdeal : (velocidadVentiladorIdeal / 2));
-
-  } else {
-    velocidad = 0;
+void control_loop(void) {
+  if (!is_race_started()) {
     set_motors_speed(0, 0);
+    if (race_finish_ms > 0 && get_clock_ticks() - race_finish_ms >= 3000) {
+      set_fan_speed(0);
+    }
+    return;
   }
+
+  update_ideal_linear_speed();
+  update_fan_speed();
+
+  sensors_update_line_position();
+
+  float linear_voltage = 0;
+
+  switch (menu_run_get_control_strategy()) {
+    case CONTROL_ENCODERS:
+      last_linear_error = linear_error;
+      linear_error += ideal_linear_speed - get_measured_linear_speed();
+      linear_voltage = KP_LINEAR * linear_error + KD_LINEAR * (linear_error - last_linear_error);
+      break;
+    case CONTROL_PWM:
+      linear_voltage = get_battery_full_voltage() * ideal_linear_speed_percent / 100.0f;
+      break;
+  }
+
+  last_angular_error = angular_error;
+  if (mpu_correction_enabled) {
+    angular_error += ideal_angular_speed - get_measured_angular_speed();
+  }
+
+  if (line_sensors_correction_enabled) {
+    last_line_sensors_error = line_sensors_error;
+    line_sensors_error = get_sensor_line_position();
+    sum_line_sensors_error += line_sensors_error;
+    // printf("%.4f | ", line_sensors_error);
+  }
+
+  float angular_voltage =
+      KP_ANGULAR * angular_error + KD_ANGULAR * (angular_error - last_angular_error) +
+      KP_LINE_SENSORS * line_sensors_error + KI_LINE_SENSORS * sum_line_sensors_error + KD_LINE_SENSORS * (line_sensors_error - last_line_sensors_error);
+
+  voltage_left = linear_voltage + angular_voltage;
+  voltage_right = linear_voltage - angular_voltage;
+  pwm_left = MOTORS_STOP_PWM + voltage_to_motor_pwm(voltage_left);
+  pwm_right = MOTORS_STOP_PWM + voltage_to_motor_pwm(voltage_right);
+  if (voltage_left != 0 && pwm_left < MOTORS_MIN_PWM) {
+    pwm_left = MOTORS_MIN_PWM;
+  }
+  if (voltage_right != 0 && pwm_right < MOTORS_MIN_PWM) {
+    pwm_right = MOTORS_MIN_PWM;
+  }
+  // printf("%ld - %ld\n", pwm_left, pwm_right);
+  set_motors_pwm(pwm_left, pwm_right);
+
+  macroarray_store(
+      0,
+      0b11100,
+      5,
+      (int16_t)(get_measured_linear_speed() * 100.0),
+      (int16_t)(get_measured_angular_speed() * 100.0),
+      (int16_t)(get_gyro_z_degrees() * 100.0),
+      (int16_t)get_encoder_x_position(),
+      (int16_t)get_encoder_y_position());
+
+  // set_fan_speed(ideal_fan_speed);
 }
 
-/**
- * @brief Obtiene la corrección de la Velocidad mediante PID para tareas de depuración
- *
- * @return float
- */
-float get_speed_correction(void) {
-  return correccion_velocidad;
+uint32_t get_emergency_stop_ms(void) {
+  return emergency_stop_ms;
 }
 
-/**
- * @brief Establece la velocidad ideal de los motores desde configuración
- *
- * @param v Velocidad en % de PWM
- */
-void set_ideal_motors_speed(int32_t v) {
-  velocidadIdeal = v;
+void reset_emergency_stop_ms(void) {
+  emergency_stop_ms = 0;
 }
 
-/**
- * @brief Establece la velocidad ideal de los motores desde configuración
- *
- * @param ms Velocidad en m/s
- */
-void set_ideal_motors_ms_speed(float ms) {
-  velocidadIdealMs = ms;
-}
-
-/**
- * @brief Establece la aceleración máxima al incrementar velocidad
- *
- * @param mss Aceleración en m/s/s
- */
-void set_acceleration_mss(float mss) {
-  accelerationMss = mss;
-}
-
-/**
- * @brief Establece la aceleración máxima al reducir velocidad
- *
- * @param mss Aceleración en m/s/s
- */
-void set_deceleration_mss(float mss) {
-  decelerationMss = mss;
-}
-
-/**
- * @brief Establece la velocidad del ventilador de succión / soplar
- *
- * @param v Velocidad en % de PWM
- */
-void set_ideal_fan_speed(int32_t v) {
-  velocidadVentiladorIdeal = v;
-}
-
-/**
- * @brief Reanuda la ejecución del Timer encargado del PID
- *
- */
-void resume_pid_speed_timer(void) {
-  resume_speed_ms = get_clock_ticks();
-  velocidad = 0;
-  correccion_velocidad = 0;
-  velocidadObjetivoMs = 0;
-  fullVelocidadVentilador = false;
-  timer_enable_irq(TIM5, TIM_DIER_CC1IE);
-}
-
-/**
- * @brief Pausa la ejecución del Timer encargado del PID
- *
- */
-void pause_pid_speed_timer(void) {
-  timer_disable_irq(TIM5, TIM_DIER_CC1IE);
-  set_motors_speed(0, 0);
-  all_leds_clear();
-}
-
-/**
- * @brief Imprime valores clave para depurar la aceleración
- *
- */
-void debug_accel(void) {
-  printf("%.2f\t%.2f\t%.2f\t%.2f\n", velocidadIdealMs, velocidadObjetivoMs, get_encoder_avg_speed(), velocidad / 10.0f);
+void emergency_stop(void) {
+  set_race_started(false);
+  emergency_stop_ms = get_clock_ticks();
+  reset_control_all();
 }

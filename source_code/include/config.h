@@ -9,13 +9,23 @@
 #define LECTURA_MAXIMO_SENSORES_LINEA 4096
 #define LECTURA_MINIMO_SENSORES_LINEA 0
 
-#define KP 0.045
-#define KI 0
-#define KD 2.85
+// #define KP 0.045
+// #define KI 0
+// #define KD 2.85
 
-#define KP_MS 10.0
-#define KI_MS 1.2
-#define KD_MS 20.0
+// #define KP_MS 10.0
+// #define KI_MS 1.2
+// #define KD_MS 20.0
+
+#define KP_LINEAR 0.00025
+#define KD_LINEAR 0.003
+
+#define KP_ANGULAR 0.04
+#define KD_ANGULAR 0.3
+
+#define KP_LINE_SENSORS 0.003
+#define KI_LINE_SENSORS 0.00
+#define KD_LINE_SENSORS 0.00
 
 #define MILLIS_INICIO_DEBUG 2000
 #define MILLIS_INICIO_RUN 5000
@@ -44,16 +54,8 @@
 #define CONFIG_SPEED_MS 1
 #define CONFIG_SPEED_PWM 0
 
-#define CONFIG_TRACK_TYPE_ENHANCED 1
-#define CONFIG_TRACK_TYPE_NORMAL 0
-
-#define CONFIG_LINE_WHITE 1
 #define CONFIG_LINE_BLACK 0
-
-void set_all_configs(void);
-uint16_t get_config_run(void);
-uint16_t get_config_speed(void);
-uint16_t get_config_line(void);
+// #define CONFIG_LINE_WHITE 1
 
 uint16_t get_offtrack_time(void);
 uint16_t get_start_millis(void);

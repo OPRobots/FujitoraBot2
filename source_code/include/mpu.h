@@ -27,8 +27,6 @@ float get_gyro_z_degrees(void);
 int16_t get_gyro_z_raw(void);
 float get_gyro_z_radps(void);
 float get_gyro_z_dps(void);
-void set_z_angle(float angle);
-void keep_z_angle(void);
 void set_gyro_z_degrees(float deg);
 
 void mpu_load_eeprom(void);

@@ -4,46 +4,16 @@
 static uint8_t adc_channels[NUM_ADC_CHANNELS] = {ADC_CHANNEL10, ADC_CHANNEL11, ADC_CHANNEL12};
 
 static volatile uint16_t adc_raw[NUM_ADC_CHANNELS];
-static volatile uint16_t sensores_raw[NUM_SENSORES];
+static volatile uint16_t sensores_raw[NUM_SENSORS];
 static volatile uint16_t mux_index = 0;
 
-static uint16_t sensores_max[NUM_SENSORES];
-static uint16_t sensores_min[NUM_SENSORES];
-static uint16_t sensores_umb[NUM_SENSORES];
+static int16_t sensores_max[NUM_SENSORS];
+static int16_t sensores_min[NUM_SENSORS];
+static int16_t sensores_umb[NUM_SENSORS];
 
 static volatile int32_t line_position = 0;
 static uint32_t ultimaLinea = 0;
 static int32_t ticks_ultima_interseccion = 0;
-
-static uint32_t millis_emergency_stop = 0;
-
-static volatile uint32_t us_readings_start = 0;
-static volatile uint32_t us_readings_elapsed = 0;
-
-/**
- * @brief Inicializa los sensores cuando se enciende el robot sin calibrarlos a partir de una calibración previa
- *
- */
-static void assign_sensors_calibrations(void) {
-  uint16_t *eeprom_data = eeprom_get_data();
-  for (uint16_t i = DATA_INDEX_SENSORS_MAX; i < NUM_SENSORES; i++) {
-    sensores_max[i] = eeprom_data[i];
-  }
-  for (uint16_t i = DATA_INDEX_SENSORS_MIN; i < DATA_INDEX_SENSORS_MIN + NUM_SENSORES; i++) {
-    sensores_min[i - DATA_INDEX_SENSORS_MIN] = eeprom_data[i];
-  }
-  for (uint16_t i = DATA_INDEX_SENSORS_UMB; i < DATA_INDEX_SENSORS_UMB + NUM_SENSORES; i++) {
-    sensores_umb[i - DATA_INDEX_SENSORS_UMB] = eeprom_data[i];
-  }
-}
-
-void print_sensors_calibrations(void) {
-  for (int sensor = 0; sensor < get_sensors_num(); sensor++) {
-    printf("sensores_max[%d] = %d;\n", sensor, sensores_max[sensor]);
-    printf("sensores_min[%d] = %d;\n", sensor, sensores_min[sensor]);
-    printf("sensores_umb[%d] = %d;\n", sensor, sensores_umb[sensor]);
-  }
-}
 
 uint8_t *get_adc_channels(void) {
   return adc_channels;
@@ -58,31 +28,185 @@ volatile uint16_t *get_adc_raw(void) {
 }
 
 uint8_t get_sensors_num(void) {
-  return NUM_SENSORES;
+  return NUM_SENSORS;
 }
 
 uint16_t get_sensor_raw(uint8_t pos) {
-  if (pos < NUM_SENSORES) {
+  if (pos < NUM_SENSORS) {
     return sensores_raw[pos];
   } else {
     return 0;
   }
 }
 
-uint32_t get_us_readings_elapsed(void) {
-  return us_readings_elapsed;
+uint16_t get_sensor_calibrated(uint8_t pos) {
+  if (pos < NUM_SENSORS) {
+    uint16_t sensor_calibrado = get_sensor_raw(pos);
+
+    if (sensor_calibrado >= sensores_umb[pos]) {
+      sensor_calibrado = LECTURA_MAXIMO_SENSORES_LINEA;
+    } else {
+      sensor_calibrado = LECTURA_MINIMO_SENSORES_LINEA;
+    }
+
+#ifdef CONFIG_LINE_BLACK
+    return sensor_calibrado;
+#elif CONFIG_LINE_WHITE
+    return LECTURA_MAXIMO_SENSORES_LINEA - sensor_calibrado;
+#else
+    return sensor_calibrado;
+#endif
+
+  } else {
+    return 0;
+  }
 }
 
-void update_sensors_readings(void) {
+int32_t get_sensor_line_position(void) {
+  return line_position;
+}
+
+void sensors_calibration(void) {
+  bool use_eeprom_calibration = true;
+  while (!get_menu_mode_btn()) {
+    set_status_heartbeat();
+    if (get_menu_down_btn()) {
+      use_eeprom_calibration = !use_eeprom_calibration;
+      set_status_led(use_eeprom_calibration);
+      while (get_menu_down_btn()) {
+      }
+    }
+    set_status_led(use_eeprom_calibration);
+  }
+  while (get_menu_mode_btn()) {
+    set_status_heartbeat();
+    warning_status_led(75);
+  }
+
+  if (use_eeprom_calibration) {
+    set_status_led(true);
+    bool sensorsMinChecked[get_sensors_num()];
+    bool sensorsMaxChecked[get_sensors_num()];
+    for (uint8_t sensor = 0; sensor < get_sensors_num(); sensor++) {
+      sensorsMinChecked[sensor] = false;
+      sensorsMaxChecked[sensor] = false;
+    }
+
+    uint8_t countSensorsChecked = 0;
+    uint32_t millisSensorsChecked = 0;
+    while (!get_menu_mode_btn() && (countSensorsChecked < get_sensors_num() || get_clock_ticks() - millisSensorsChecked < 500)) {
+      for (uint8_t sensor = 0; sensor < get_sensors_num(); sensor++) {
+        if (abs(get_sensor_raw(sensor) - sensores_min[sensor]) < 200) {
+          sensorsMinChecked[sensor] = true;
+        }
+        if (abs(get_sensor_raw(sensor) - sensores_max[sensor]) < 200 && sensorsMinChecked[sensor]) {
+          if (!sensorsMaxChecked[sensor]) {
+            printf("Sensor %2d OK\n", (sensor + 1));
+          }
+          sensorsMaxChecked[sensor] = true;
+        }
+      }
+
+      countSensorsChecked = 0;
+      for (uint8_t sensor = 0; sensor < get_sensors_num(); sensor++) {
+        if (sensorsMinChecked[sensor] && sensorsMaxChecked[sensor]) {
+          countSensorsChecked++;
+        }
+      }
+
+      if (countSensorsChecked == 0) {
+        set_RGB_color(125, 0, 0);
+      } else if (countSensorsChecked < get_sensors_num()) {
+        set_RGB_color(125, 125, 0);
+      } else {
+        set_RGB_color(0, 125, 0);
+        if (millisSensorsChecked == 0) {
+          millisSensorsChecked = get_clock_ticks();
+        }
+      }
+    }
+  } else {
+    set_status_led(false);
+    delay(1000);
+
+    // Resetear los valores máximos, mínimos y umbrales
+    for (uint8_t sensor = 0; sensor < NUM_SENSORS; sensor++) {
+      sensores_max[sensor] = LECTURA_MINIMO_SENSORES_LINEA;
+      sensores_min[sensor] = LECTURA_MAXIMO_SENSORES_LINEA;
+      sensores_umb[sensor] = LECTURA_MINIMO_SENSORES_LINEA;
+    }
+
+    uint32_t ms_inicio = get_clock_ticks();
+    while (ms_inicio + MS_CALIBRACION_LINEA >= get_clock_ticks()) {
+      for (int sensor = 0; sensor < get_sensors_num(); sensor++) {
+        if (sensores_raw[sensor] < sensores_min[sensor]) {
+          sensores_min[sensor] = sensores_raw[sensor];
+        }
+        if (sensores_raw[sensor] > sensores_max[sensor]) {
+          sensores_max[sensor] = sensores_raw[sensor];
+        }
+      }
+
+      set_RGB_rainbow();
+    }
+
+    bool calibrationOK = true;
+    for (int sensor = 0; sensor < get_sensors_num(); sensor++) {
+      if (abs(sensores_max[sensor] - sensores_min[sensor]) < 1000) {
+        calibrationOK = false;
+      }
+      sensores_umb[sensor] = sensores_min[sensor] + ((sensores_max[sensor] - sensores_min[sensor]) * 2 / 3);
+    }
+
+    eeprom_set_data(DATA_INDEX_SENSORS_MAX, sensores_max, NUM_SENSORS);
+    eeprom_set_data(DATA_INDEX_SENSORS_MIN, sensores_min, NUM_SENSORS);
+    eeprom_set_data(DATA_INDEX_SENSORS_UMB, sensores_umb, NUM_SENSORS);
+
+    if (calibrationOK) {
+      set_RGB_color(0, 100, 0);
+      delay(500);
+    } else {
+      while (!get_menu_mode_btn()) {
+        if (calibrationOK) {
+          set_RGB_color(0, 100, 0);
+        } else if (!calibrationOK) {
+          set_RGB_color(100, 0, 0);
+        }
+        while (get_menu_mode_btn()) {
+        };
+      }
+    }
+  }
+  set_RGB_color(0, 0, 0);
+  sensors_print_calibration();
+  delay(250);
+}
+
+void sensors_load_eeprom(void) {
+  int16_t *eeprom_data = eeprom_get_data();
+  for (uint16_t i = DATA_INDEX_SENSORS_MAX; i < DATA_INDEX_SENSORS_MAX + NUM_SENSORS; i++) {
+    sensores_max[i - DATA_INDEX_SENSORS_MAX] = eeprom_data[i];
+  }
+  for (uint16_t i = DATA_INDEX_SENSORS_MIN; i < DATA_INDEX_SENSORS_MIN + NUM_SENSORS; i++) {
+    sensores_min[i - DATA_INDEX_SENSORS_MIN] = eeprom_data[i];
+  }
+  for (uint16_t i = DATA_INDEX_SENSORS_UMB; i < DATA_INDEX_SENSORS_UMB + NUM_SENSORS; i++) {
+    sensores_umb[i - DATA_INDEX_SENSORS_UMB] = eeprom_data[i];
+  }
+  sensors_print_calibration();
+}
+
+void sensors_print_calibration(void) {
+  for (int sensor = 0; sensor < get_sensors_num(); sensor++) {
+    printf("Sensor %2d: %4d <> %4d <> %4d\n", sensor + 1, sensores_min[sensor], sensores_umb[sensor], sensores_max[sensor]);
+  }
+}
+
+void sensors_update_mux_readings(void) {
   // ! Caution: Parece que al activar el ADC2 (lectura de batería) se desordenan los canales del ADC1 wtf?
   sensores_raw[(MUX_CHANNELS) + mux_index] = adc_raw[0];
   sensores_raw[mux_index] = adc_raw[1];
   sensores_raw[2 * (MUX_CHANNELS) + mux_index] = adc_raw[2];
-  // if(mux_index == 0){
-  //   us_readings_start = read_cycle_counter() * (float)MICROSECONDS_PER_SECOND / (float)SYSCLK_FREQUENCY_HZ;
-  // }else if(mux_index == 7){
-  //   us_readings_elapsed = (read_cycle_counter() * (float)MICROSECONDS_PER_SECOND / (float)SYSCLK_FREQUENCY_HZ) - us_readings_start;
-  // }
 
   mux_index = (mux_index + 1) % MUX_CHANNELS;
   int c = GPIO13;
@@ -123,150 +247,7 @@ void update_sensors_readings(void) {
   delay_us(3);
 }
 
-uint16_t get_sensor_calibrated(uint8_t pos) {
-  if (pos < NUM_SENSORES) {
-    uint16_t sensor_calibrado = get_sensor_raw(pos);
-
-    if (sensor_calibrado >= sensores_umb[pos]) {
-      sensor_calibrado = LECTURA_MAXIMO_SENSORES_LINEA;
-    } else {
-      sensor_calibrado = LECTURA_MINIMO_SENSORES_LINEA;
-    }
-
-    if (get_config_line() == CONFIG_LINE_BLACK) {
-      return sensor_calibrado;
-    } else {
-      return LECTURA_MAXIMO_SENSORES_LINEA - sensor_calibrado;
-    }
-  } else {
-    return 0;
-  }
-}
-
-void calibrate_sensors(void) {
-  assign_sensors_calibrations();
-  bool use_eeprom_calibration = true;
-  while (!get_menu_mode_btn()) {
-    set_status_heartbeat();
-    if (get_menu_down_btn()) {
-      use_eeprom_calibration = !use_eeprom_calibration;
-      set_status_led(use_eeprom_calibration);
-      while (get_menu_down_btn()) {
-      }
-    }
-    set_status_led(use_eeprom_calibration);
-  }
-  while (get_menu_mode_btn()) {
-    set_status_heartbeat();
-    warning_status_led(75);
-  }
-
-  if (use_eeprom_calibration) {
-    bool sensorsMinChecked[get_sensors_num()];
-    bool sensorsMaxChecked[get_sensors_num()];
-    for (uint8_t sensor = 0; sensor < get_sensors_num(); sensor++) {
-      sensorsMinChecked[sensor] = false;
-      sensorsMaxChecked[sensor] = false;
-    }
-
-    uint8_t countSensorsChecked = 0;
-    uint32_t millisSensorsChecked = 0;
-    while (!get_menu_mode_btn() && (countSensorsChecked < get_sensors_num() || get_clock_ticks() - millisSensorsChecked < 500)) {
-      for (uint8_t sensor = 0; sensor < get_sensors_num(); sensor++) {
-        if (abs(get_sensor_raw(sensor) - sensores_min[sensor]) < 200) {
-          sensorsMinChecked[sensor] = true;
-        }
-        if (abs(get_sensor_raw(sensor) - sensores_max[sensor]) < 200 && sensorsMinChecked[sensor]) {
-          sensorsMaxChecked[sensor] = true;
-        }
-      }
-
-      countSensorsChecked = 0;
-      for (uint8_t sensor = 0; sensor < get_sensors_num(); sensor++) {
-        if (sensorsMinChecked[sensor] && sensorsMaxChecked[sensor]) {
-          countSensorsChecked++;
-        }
-      }
-
-      if (countSensorsChecked == 0) {
-        set_RGB_color(125, 0, 0);
-      } else if (countSensorsChecked < get_sensors_num()) {
-        set_RGB_color(125, 125, 0);
-      } else {
-        set_RGB_color(0, 125, 0);
-        if (millisSensorsChecked == 0) {
-          millisSensorsChecked = get_clock_ticks();
-        }
-      }
-    }
-  } else {
-    delay(1000);
-
-    // Resetear los valores máximos, mínimos y umbrales
-    for (uint8_t sensor = 0; sensor < NUM_SENSORES; sensor++) {
-      sensores_max[sensor] = LECTURA_MINIMO_SENSORES_LINEA;
-      sensores_min[sensor] = LECTURA_MAXIMO_SENSORES_LINEA;
-      sensores_umb[sensor] = LECTURA_MINIMO_SENSORES_LINEA;
-    }
-
-    uint32_t ms_inicio = get_clock_ticks();
-    while (ms_inicio + MS_CALIBRACION_LINEA >= get_clock_ticks()) {
-      for (int sensor = 0; sensor < get_sensors_num(); sensor++) {
-        if (sensores_raw[sensor] < sensores_min[sensor]) {
-          sensores_min[sensor] = sensores_raw[sensor];
-        }
-        if (sensores_raw[sensor] > sensores_max[sensor]) {
-          sensores_max[sensor] = sensores_raw[sensor];
-        }
-      }
-
-      set_RGB_rainbow();
-    }
-
-    bool calibrationOK = true;
-    bool marksOK = true;
-    for (int sensor = 0; sensor < get_sensors_num(); sensor++) {
-      if (abs(sensores_max[sensor] - sensores_min[sensor]) < 1000) {
-        calibrationOK = false;
-      }
-      sensores_umb[sensor] = sensores_min[sensor] + ((sensores_max[sensor] - sensores_min[sensor]) * 2 / 3);
-    }
-
-    eeprom_set_data(DATA_INDEX_SENSORS_MAX, sensores_max, NUM_SENSORES);
-    eeprom_set_data(DATA_INDEX_SENSORS_MIN, sensores_min, NUM_SENSORES);
-    eeprom_set_data(DATA_INDEX_SENSORS_UMB, sensores_umb, NUM_SENSORES);
-
-    if (calibrationOK && marksOK) {
-      set_RGB_color(0, 100, 0);
-      delay(500);
-    } else {
-      while (!get_menu_mode_btn()) {
-        if (calibrationOK && marksOK) {
-          set_RGB_color(0, 100, 0);
-        } else if (!calibrationOK) {
-          set_RGB_color(100, 0, 0);
-        } else if (!marksOK) {
-          set_RGB_color(100, 20, 0);
-        }
-      }
-      while (get_menu_mode_btn()) {
-        if (calibrationOK) {
-          set_RGB_color(0, 100, 0);
-        } else {
-          set_RGB_color(100, 0, 0);
-        }
-      }
-    }
-  }
-  set_RGB_color(0, 0, 0);
-  delay(250);
-}
-
-int32_t get_sensor_line_position(void) {
-  return line_position;
-}
-
-void calc_sensor_line_position(void) {
+void sensors_update_line_position(void) {
   uint32_t suma_sensores_ponderados = 0;
   uint32_t suma_sensores = 0;
   uint8_t sensores_detectando = 0;
@@ -319,7 +300,7 @@ void calc_sensor_line_position(void) {
 
   if (sensores_detectando > 0 && sensores_detectando_sin_filtro < get_sensors_num() / 2) {
     ultimaLinea = get_clock_ticks();
-  } else if (is_competicion_iniciada()) {
+  } else if (is_race_started()) {
     if (get_clock_ticks() > (ultimaLinea + get_offtrack_time())) {
       emergency_stop();
     }
@@ -341,17 +322,6 @@ void calc_sensor_line_position(void) {
   line_position = posicion;
 }
 
-uint32_t get_millis_emergency_stop(void) {
-  return millis_emergency_stop;
-}
-
-void reset_millis_emergency_stop(void) {
-  millis_emergency_stop = 0;
-}
-
-void emergency_stop(void) {
-  set_competicion_iniciada(false);
-  pause_pid_speed_timer();
+void sensors_reset_line_position(void) {
   line_position = 0;
-  millis_emergency_stop = get_clock_ticks();
 }
