@@ -73,7 +73,7 @@ static void debug_line_position(void) {
 
 static void debug_encoders(void) {
   if (get_clock_ticks() > last_print_debug + 50) {
-    printf("%ld (%ld)\t%ld (%ld)\n", get_encoder_left_total_ticks(), get_encoder_left_micrometers(), get_encoder_right_total_ticks(), get_encoder_right_micrometers());
+    printf("%ld (%ld)\t%ld (%ld)\n", get_encoder_left_ticks(), get_encoder_left_micrometers(), get_encoder_right_ticks(), get_encoder_right_micrometers());
     last_print_debug = get_clock_ticks();
   }
 }
@@ -86,7 +86,7 @@ static void debug_motors(void) {
 
 static void debug_fans(void) {
   if (is_esc_inited()) {
-    set_fan_speed(50);
+    set_fan_speed(30);
   }
 }
 
