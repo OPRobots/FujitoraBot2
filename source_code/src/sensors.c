@@ -203,9 +203,9 @@ void sensors_print_calibration(void) {
 
 void sensors_update_mux_readings(void) {
   // ! Caution: Parece que al activar el ADC2 (lectura de batería) se desordenan los canales del ADC1 wtf?
-  sensores_raw[(MUX_CHANNELS) + mux_index] = adc_raw[0];
-  sensores_raw[mux_index] = adc_raw[1];
-  sensores_raw[2 * (MUX_CHANNELS) + mux_index] = adc_raw[2];
+  sensores_raw[(MUX_CHANNELS) + mux_index] = adc_raw[1];
+  sensores_raw[mux_index] = adc_raw[2];
+  sensores_raw[2 * (MUX_CHANNELS) + mux_index] = adc_raw[0];
 
   mux_index = (mux_index + 1) % MUX_CHANNELS;
   int c = GPIO13;
