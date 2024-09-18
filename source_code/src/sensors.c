@@ -13,7 +13,6 @@ static int16_t sensores_umb[NUM_SENSORS];
 
 static volatile int32_t line_position = 0;
 static uint32_t ultimaLinea = 0;
-static int32_t ticks_ultima_interseccion = 0;
 
 uint8_t *get_adc_channels(void) {
   return adc_channels;
@@ -292,10 +291,6 @@ void sensors_update_line_position(void) {
     }
     suma_sensores_ponderados += (sensor + 1) * sensor_value * 1000;
     suma_sensores += sensor_value;
-  }
-
-  if (sensores_detectando > 3) {
-    ticks_ultima_interseccion = (get_encoder_left_total_ticks() + get_encoder_right_total_ticks()) / 2;
   }
 
   if (sensores_detectando > 0 && sensores_detectando_sin_filtro < get_sensors_num() / 2) {
