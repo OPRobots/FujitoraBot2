@@ -210,7 +210,7 @@ void set_target_fan_speed(int32_t fan_speed, int32_t ms) {
 void control_loop(void) {
   if (!is_race_started()) {
     set_motors_speed(0, 0);
-    if (race_finish_ms > 0 && get_clock_ticks() - race_finish_ms >= 3000) {
+    if (race_finish_ms > 0 && get_clock_ticks() - race_finish_ms >= 500) {
       set_fan_speed(0);
     }
     return;

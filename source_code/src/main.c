@@ -49,9 +49,9 @@ int main(void) {
           r = map(millisPasados, 0, get_start_millis(), 255, 0);
           g = map(millisPasados, 0, 1000, 0, 255);
           set_RGB_color(r, g, 0);
-          // if ((millisPasados > get_start_millis() * 0.75 || get_start_millis() == 0) && get_base_fan_speed() > 0) {
-          // set_target_fan_speed(get_kinematics().fan_speed / 2, 500);
-          // }
+          if ((millisPasados > get_start_millis() * 0.75 || get_start_millis() == 0) && get_kinematics().fan_speed > 0) {
+            set_target_fan_speed(get_kinematics().fan_speed / 2, 500);
+          }
         }
         set_RGB_color(0, 0, 0);
         set_target_linear_speed(get_kinematics().linear_speed);
