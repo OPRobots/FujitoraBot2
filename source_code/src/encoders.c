@@ -26,7 +26,7 @@ static volatile float left_speed;
 static volatile float right_speed;
 
 // /* Angular speed, in radians per second */
-// static volatile float angular_speed;
+static volatile float angular_speed;
 
 // /* Current angle, in rad*/
 // static volatile float current_angle = 0;
@@ -156,12 +156,12 @@ float get_encoder_avg_speed(void) {
 //   return (int32_t)(position_y * 1000);
 // }
 
-// /**
-//  * @brief Read angular speed in radians per second.
-//  */
-// float get_encoder_angular_speed(void) {
-//   return angular_speed;
-// }
+/**
+ * @brief Read angular speed in radians per second.
+ */
+float get_encoder_angular_speed(void) {
+  return angular_speed;
+}
 
 /**
  * @brief Return the most likely counter difference.
@@ -223,7 +223,7 @@ void update_encoder_readings(void) {
   left_speed = 0.3f * new_left_speed + (1 - 0.3f) * left_speed;
   right_speed = 0.3f * new_right_speed + (1 - 0.3f) * right_speed;
 
-  // angular_speed = (left_speed - right_speed) / wheels_separation;
+  angular_speed = ((left_speed - right_speed) / MILLIMETERS_PER_METER) / wheels_separation;
 
   // current_angle += angular_speed / SYSTICK_FREQUENCY_HZ;
 

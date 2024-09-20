@@ -154,14 +154,6 @@ void gyro_z_calibration(void) {
   }
   zout_c2 = -(int16_t)(zout_av * MPU_COMPLEMENT_2_FACTOR);
 
-  int16_t eeprom_zout_c2;
-  int16_t *eeprom_stored_data = eeprom_get_data();
-  eeprom_zout_c2 = eeprom_stored_data[1];
-  if (eeprom_stored_data[0] == 0) {
-    eeprom_zout_c2 = -eeprom_zout_c2;
-  }
-  zout_c2 += eeprom_zout_c2;
-
   set_gyro_z_calibration(zout_c2);
 
   int16_t eeprom_data[1] = {zout_c2};

@@ -43,7 +43,7 @@ void macroarray_store(uint8_t ms, uint16_t float_bits, uint8_t size, ...) {
   va_end(valist);
 }
 
-void macroarray_print(void) {
+void macroarray_print_plot(void) {
   if (macroarray_start == macroarray_end || macroarray_size == 0) {
     return;
   }
@@ -51,15 +51,42 @@ void macroarray_print(void) {
   uint8_t col = 1;
   do {
     if (macroarray_float_bits & (1 << (macroarray_size - col))) {
-      printf(">log%d:%.2f",col, macroarray[i] / 100.0);
+      printf(">log%d:%.2f", col, macroarray[i] / 100.0);
     } else {
-      printf(">log%d:%d",col, macroarray[i]);
+      printf(">log%d:%d", col, macroarray[i]);
     }
     if (col == macroarray_size) {
       printf("\n");
       col = 1;
     } else {
-      printf("\n"/* MACROARRAY_SEPARATOR */);
+      printf(MACROARRAY_PLOT_SEPARATOR);
+      col++;
+    }
+
+    i++;
+    if (i >= MACROARRAY_LENGTH) {
+      i = 0;
+    }
+  } while (i != macroarray_end);
+}
+
+void macroarray_print_tabs(void) {
+  if (macroarray_start == macroarray_end || macroarray_size == 0) {
+    return;
+  }
+  uint16_t i = macroarray_start;
+  uint8_t col = 1;
+  do {
+    if (macroarray_float_bits & (1 << (macroarray_size - col))) {
+      printf("%.2f", macroarray[i] / 100.0);
+    } else {
+      printf("%d", macroarray[i]);
+    }
+    if (col == macroarray_size) {
+      printf("\n");
+      col = 1;
+    } else {
+      printf(MACROARRAY_TABS_SEPARATOR);
       col++;
     }
 

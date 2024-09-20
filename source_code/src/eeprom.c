@@ -5,7 +5,7 @@ static bool is_dirty = false;
 static uint32_t millis_save = 0;
 
 void eeprom_save(void) {
-  if(!is_dirty){
+  if (!is_dirty) {
     return;
   }
   // for (uint16_t i = 0; i < DATA_LENGTH; i++) {
@@ -40,7 +40,9 @@ void eeprom_load(void) {
   //   printf("eeprom_load[%d] = %d;\n", i, eeprom_data[i]);
   // }
 
-  mpu_load_eeprom();
+  if (!get_menu_up_btn()) {
+    // mpu_load_eeprom();
+  }
   sensors_load_eeprom();
   menu_run_load_values();
 }
@@ -53,7 +55,7 @@ void eeprom_clear(void) {
 
 void eeprom_set_data(uint16_t index, int16_t *data, uint16_t length) {
   for (uint16_t i = index; i < index + length; i++) {
-    if(eeprom_data[i] != data[i-index]){
+    if (eeprom_data[i] != data[i - index]) {
       is_dirty = true;
     }
     eeprom_data[i] = data[i - index];

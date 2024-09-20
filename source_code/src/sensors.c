@@ -319,4 +319,5 @@ void sensors_update_line_position(void) {
 
 void sensors_reset_line_position(void) {
   line_position = 0;
+  ultimaLinea = 0;
 }

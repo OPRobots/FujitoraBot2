@@ -37,7 +37,7 @@ static void handle_menu_config_value(void) {
           set_info_leds_wave(120);
           break;
         case CALIBRATE_SENSORS:
-          set_info_leds_wave(120);
+          set_info_leds_wave(50);
           break;
         case CALIBRATE_STORE_EEPROM:
           set_info_leds_blink(250);
@@ -51,6 +51,9 @@ static void handle_menu_config_value(void) {
           set_info_led(i - 1, i == valueConfig[modeConfig]);
         }
         debug_from_config(valueConfig[modeConfig]);
+      } else {
+        set_RGB_color(0, 0, 0);
+        clear_info_leds();
       }
       break;
   }

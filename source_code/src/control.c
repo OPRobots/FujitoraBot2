@@ -50,10 +50,19 @@ static int32_t voltage_to_motor_pwm(float voltage) {
   }
 }
 
+static float get_measured_angular_speed(void) {
+  return -get_gyro_z_radps();
+}
+
+static float get_measured_linear_speed(void) {
+  return (get_encoder_left_speed() + get_encoder_right_speed()) / 2.0f;
+}
+
 static void update_ideal_linear_speed(void) {
   switch (menu_run_get_control_strategy()) {
     case CONTROL_ENCODERS:
       if (ideal_linear_speed < target_linear_speed) {
+        ideal_linear_speed += MIN_ACCEL_MS2 / CONTROL_FREQUENCY_HZ;
         ideal_linear_speed += get_kinematics().linear_accel / CONTROL_FREQUENCY_HZ;
         if (ideal_linear_speed > target_linear_speed) {
           ideal_linear_speed = target_linear_speed;
@@ -96,14 +105,6 @@ static void update_fan_speed(void) {
   }
 }
 
-static float get_measured_linear_speed(void) {
-  return (get_encoder_left_speed() + get_encoder_right_speed()) / 2.0f;
-}
-
-static float get_measured_angular_speed(void) {
-  return -get_gyro_z_radps();
-}
-
 /**
  * @brief Comprueba si el robot está en funcionamiento
  *
@@ -123,6 +124,9 @@ bool is_race_started(void) {
 void set_race_started(bool state) {
   race_started = state;
   if (state) {
+    sensors_reset_line_position();
+    set_gyro_z_degrees(0);
+    reset_control_all();
     race_start_ms = get_clock_ticks();
   } else {
     menu_reset();
@@ -164,19 +168,36 @@ void set_line_sensors_correction(bool enabled) {
 }
 
 void reset_control_errors(void) {
+  linear_error = 0;
+  last_linear_error = 0;
+
+  angular_error = 0;
+  last_angular_error = 0;
+
   line_sensors_error = 0;
   sum_line_sensors_error = 0;
   last_line_sensors_error = 0;
+
+  mpu_correction_enabled = false;
+  line_sensors_correction_enabled = false;
 }
 
 void reset_control_speed(void) {
   target_linear_speed = 0;
   ideal_linear_speed = 0;
+
   target_linear_speed_percent = 0;
   ideal_linear_speed_percent = 0;
+
   ideal_angular_speed = 0.0;
+
+  target_fan_speed = 0;
+  ideal_fan_speed = 0;
+  fan_speed_accel = 0;
+
   voltage_left = 0;
   voltage_right = 0;
+
   pwm_left = 0;
   pwm_right = 0;
 }
@@ -188,6 +209,10 @@ void reset_control_all(void) {
 
 void set_target_linear_speed(int32_t linear_speed) {
   target_linear_speed = linear_speed;
+  if (target_linear_speed > 0 && ideal_linear_speed == 0) {
+    // Velocidad lineal mínima (calculada empíricamente) para evitar cogging
+    ideal_linear_speed = 165;
+  }
 }
 
 int32_t get_ideal_linear_speed(void) {
@@ -211,7 +236,7 @@ void control_loop(void) {
   if (!is_race_started()) {
     set_motors_speed(0, 0);
     if (race_finish_ms > 0 && get_clock_ticks() - race_finish_ms >= 500) {
-      set_fan_speed(0);
+      // set_fan_speed(0);
     }
     return;
   }
@@ -227,6 +252,10 @@ void control_loop(void) {
     case CONTROL_ENCODERS:
       last_linear_error = linear_error;
       linear_error += ideal_linear_speed - get_measured_linear_speed();
+      // Anti-windup calculado empíricamente para evitar que el error crezca demasiado en la aceleración inicial
+      if (linear_error > 8000 && get_measured_linear_speed() < 1000) {
+        linear_error = 8000;
+      }
       linear_voltage = KP_LINEAR * linear_error + KD_LINEAR * (linear_error - last_linear_error);
       break;
     case CONTROL_PWM:
@@ -260,20 +289,37 @@ void control_loop(void) {
   if (voltage_right != 0 && pwm_right < MOTORS_MIN_PWM) {
     pwm_right = MOTORS_MIN_PWM;
   }
+  if (pwm_left > MOTORS_MAX_PWM) {
+    pwm_left = MOTORS_MAX_PWM;
+  }
+  if (pwm_right > MOTORS_MAX_PWM) {
+    pwm_right = MOTORS_MAX_PWM;
+  }
+
+  if (ideal_linear_speed_percent > 0 || ideal_linear_speed_percent > 0 || target_linear_speed > 0) {
+    // macroarray_store(
+    //     0,
+    //     0b0000000,
+    //     7,
+    //     (int16_t)(target_linear_speed),
+    //     (int16_t)(ideal_linear_speed),
+    //     (int16_t)(get_measured_linear_speed()),
+    //     (int16_t)(linear_error),
+    //     (int16_t)(line_sensors_error),
+    //     (int16_t)(pwm_left),
+    //     (int16_t)(pwm_right));
+    macroarray_store(
+        0,
+        0b0111,
+        4,
+        (int16_t)(get_measured_linear_speed()),
+        (int16_t)(get_encoder_angular_speed() * 100),
+        (int16_t)(get_measured_angular_speed() * 100),
+        (int16_t)(get_gyro_z_degrees() * 100));
+  }
   // printf("%ld - %ld\n", pwm_left, pwm_right);
   set_motors_pwm(pwm_left, pwm_right);
-
-  macroarray_store(
-      0,
-      0b11100,
-      5,
-      (int16_t)(get_measured_linear_speed() * 100.0),
-      (int16_t)(get_measured_angular_speed() * 100.0),
-      (int16_t)(get_gyro_z_degrees() * 100.0),
-      (int16_t)get_encoder_x_position(),
-      (int16_t)get_encoder_y_position());
-
-  // set_fan_speed(ideal_fan_speed);
+  set_fan_speed(ideal_fan_speed);
 }
 
 uint32_t get_emergency_stop_ms(void) {
@@ -287,5 +333,4 @@ void reset_emergency_stop_ms(void) {
 void emergency_stop(void) {
   set_race_started(false);
   emergency_stop_ms = get_clock_ticks();
-  reset_control_all();
 }

@@ -22,10 +22,10 @@ void calibrate_from_config(uint8_t type) {
     delay(2000);
     switch (type) {
       case CALIBRATE_GYRO_Z:
-        // gyro_z_calibration();
+        gyro_z_calibration();
         break;
       case CALIBRATE_SENSORS:
-        // sensors_calibration();
+        sensors_calibration();
         break;
       case CALIBRATE_STORE_EEPROM:
         eeprom_save();

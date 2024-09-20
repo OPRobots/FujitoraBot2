@@ -4,9 +4,8 @@ bool debug_enabled = false;
 uint32_t last_print_debug = 0;
 
 static void debug_macroarray(void) {
-  macroarray_print();
+  macroarray_print_tabs();
   debug_enabled = false;
-  menu_config_reset_values();
 }
 
 /**

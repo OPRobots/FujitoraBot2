@@ -18,7 +18,7 @@
 // #define KD_MS 20.0
 
 #define KP_LINEAR 0.00025
-#define KD_LINEAR 0.003
+#define KD_LINEAR 0.00//3
 
 #define KP_ANGULAR 0.04
 #define KD_ANGULAR 0.3
@@ -33,13 +33,13 @@
 #define TIEMPO_SIN_PISTA 150
 
 #define MICROMETERS_PER_TICK 3.6339
-#define WHEELS_SEPARATION 0.1169
+#define WHEELS_SEPARATION 0.12
 
 #define MIN_SPEED_PERCENT 5
 #define MAX_ACCEL_PERCENT 45.0
-#define MIN_ACCEL_MS2 3.0
-#define MAX_ACCEL_MS2 8.0
-#define MAX_BREAK_MS2 10.0
+#define MIN_ACCEL_MS2 3000
+#define MAX_ACCEL_MS2 8000
+#define MAX_BREAK_MS2 10000
 
 /** Divisor de Voltage */
 #define VOLT_DIV_FACTOR 3.8673
