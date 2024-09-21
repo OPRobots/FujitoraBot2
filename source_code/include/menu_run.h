@@ -8,11 +8,12 @@
 #define MENU_RUN_NUM_MODES 6
 
 enum speed_strategy {
-  SPEED_BASE = 0,
-  SPEED_NORMAL = 1,
-  SPEED_MEDIUM = 2,
-  SPEED_FAST = 3,
-  SPEED_HAKI = 4,
+  SPEED_TEST = 0,
+  SPEED_BASE = 1,
+  SPEED_NORMAL = 2,
+  SPEED_MEDIUM = 3,
+  SPEED_FAST = 4,
+  SPEED_HAKI = 5,
 };
 
 enum adaptative_speed {
