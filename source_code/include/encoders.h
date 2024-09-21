@@ -24,6 +24,9 @@ float get_encoder_right_speed(void);
 float get_encoder_avg_speed(void);
 float get_encoder_angular_speed(void);
 
+int32_t get_encoder_x_position(void);
+int32_t get_encoder_y_position(void);
+
 int32_t max_likelihood_counter_diff(uint16_t now, uint16_t before);
 void update_encoder_readings(void);
 

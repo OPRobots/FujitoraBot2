@@ -14,7 +14,6 @@ static volatile int32_t right_total_ticks;
 /* Total travelled distance, in micrometers */
 static volatile int32_t left_micrometers;
 static volatile int32_t right_micrometers;
-static volatile float avg_micrometers;
 
 /* Total travelled distance, in millimeters */
 static volatile int32_t left_millimeters;
@@ -29,11 +28,11 @@ static volatile float right_speed;
 static volatile float angular_speed;
 
 // /* Current angle, in rad*/
-// static volatile float current_angle = 0;
+static volatile float current_angle = 0;
 
 // /* Cartesian position, in micrometers*/
-// static volatile float position_x = 0;
-// static volatile float position_y = 0;
+static volatile float position_x = 0;
+static volatile float position_y = 0;
 
 // float get_wheels_separation(void) {
 //   return wheels_separation;
@@ -145,16 +144,16 @@ float get_encoder_avg_speed(void) {
 // /**
 //  * @brief Read left motor speed in meters per second.
 //  */
-// int32_t get_encoder_x_position(void) {
-//   return (int32_t)(position_x * 1000);
-// }
+int32_t get_encoder_x_position(void) {
+  return (int32_t)(position_x);
+}
 
 // /**
 //  * @brief Read right motor speed in meters per second.
 //  */
-// int32_t get_encoder_y_position(void) {
-//   return (int32_t)(position_y * 1000);
-// }
+int32_t get_encoder_y_position(void) {
+  return (int32_t)(position_y);
+}
 
 /**
  * @brief Read angular speed in radians per second.
@@ -225,12 +224,12 @@ void update_encoder_readings(void) {
 
   angular_speed = ((left_speed - right_speed) / MILLIMETERS_PER_METER) / wheels_separation;
 
-  // current_angle += angular_speed / SYSTICK_FREQUENCY_HZ;
+  current_angle += angular_speed / SYSTICK_FREQUENCY_HZ;
 
-  // avg_micrometers = (left_speed / SYSTICK_FREQUENCY_HZ + right_speed / SYSTICK_FREQUENCY_HZ) / 2.0f;
+  avg_millimeters = (left_speed / SYSTICK_FREQUENCY_HZ + right_speed / SYSTICK_FREQUENCY_HZ) / 2.0f;
 
-  // position_x += avg_micrometers * cos(current_angle);
-  // position_y += avg_micrometers * sin(current_angle);
+  position_x += avg_millimeters * cos(current_angle);
+  position_y += avg_millimeters * sin(current_angle);
 
   last_left_ticks = left_ticks;
   last_right_ticks = right_ticks;

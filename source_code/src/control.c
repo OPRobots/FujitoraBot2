@@ -236,7 +236,7 @@ void control_loop(void) {
   if (!is_race_started()) {
     set_motors_speed(0, 0);
     if (race_finish_ms > 0 && get_clock_ticks() - race_finish_ms >= 500) {
-      // set_fan_speed(0);
+      set_fan_speed(0);
     }
     return;
   }
@@ -310,12 +310,12 @@ void control_loop(void) {
     //     (int16_t)(pwm_right));
     macroarray_store(
         0,
-        0b0111,
+        0b0100,
         4,
         (int16_t)(get_measured_linear_speed()),
         (int16_t)(get_encoder_angular_speed() * 100),
-        (int16_t)(get_measured_angular_speed() * 100),
-        (int16_t)(get_gyro_z_degrees() * 100));
+        (int16_t)(get_encoder_x_position()),
+        (int16_t)(get_encoder_y_position()));
   }
   // printf("%ld - %ld\n", pwm_left, pwm_right);
   set_motors_pwm(pwm_left, pwm_right);
