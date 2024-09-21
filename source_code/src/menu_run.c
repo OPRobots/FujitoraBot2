@@ -59,7 +59,13 @@ static void handle_menu_run_values(void) {
 
   if (modeRun == MODE_RACE) {
     if (valueRun[modeRun] == 1) {
-      set_RGB_color(50, 0, 50);
+      if (abs(get_sensor_line_position()) < 100) {
+        set_RGB_color(50, 0, 50);
+      } else if(blinkState) {
+        set_RGB_color(50, 0, 50);
+      }else{
+        set_RGB_color(50, 0, 0);
+      }
     } else {
       if (blinkState) {
         set_RGB_color(50, 0, 0);

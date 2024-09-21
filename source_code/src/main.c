@@ -23,6 +23,7 @@ void sys_tick_handler(void) {
   update_battery_voltage();
   update_encoder_readings();
   update_gyro_readings();
+  sensors_update_line_position();
 }
 
 int main(void) {

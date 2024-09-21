@@ -244,8 +244,6 @@ void control_loop(void) {
   update_ideal_linear_speed();
   update_fan_speed();
 
-  sensors_update_line_position();
-
   float linear_voltage = 0;
 
   switch (menu_run_get_control_strategy()) {
