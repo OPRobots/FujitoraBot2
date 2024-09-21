@@ -228,8 +228,8 @@ void update_encoder_readings(void) {
 
   avg_millimeters = (left_speed / SYSTICK_FREQUENCY_HZ + right_speed / SYSTICK_FREQUENCY_HZ) / 2.0f;
 
-  position_x += avg_millimeters * cos(current_angle);
-  position_y += avg_millimeters * sin(current_angle);
+  position_x += ((left_speed + right_speed) / 2.0) * cos(current_angle) / SYSTICK_FREQUENCY_HZ;
+  position_y += ((left_speed + right_speed) / 2.0) * sin(current_angle) / SYSTICK_FREQUENCY_HZ;
 
   last_left_ticks = left_ticks;
   last_right_ticks = right_ticks;
