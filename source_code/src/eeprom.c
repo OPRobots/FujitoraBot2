@@ -41,7 +41,7 @@ void eeprom_load(void) {
   // }
 
   if (!get_menu_up_btn()) {
-    // mpu_load_eeprom();
+    mpu_load_eeprom();
   }
   sensors_load_eeprom();
   menu_run_load_values();

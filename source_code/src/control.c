@@ -126,6 +126,7 @@ void set_race_started(bool state) {
   if (state) {
     sensors_reset_line_position();
     set_gyro_z_degrees(0);
+    reset_encoder_current_angle();
     reset_control_all();
     race_start_ms = get_clock_ticks();
   } else {
@@ -294,7 +295,7 @@ void control_loop(void) {
     pwm_right = MOTORS_MAX_PWM;
   }
 
-  if (ideal_linear_speed_percent > 0 || ideal_linear_speed_percent > 0 || target_linear_speed > 0) {
+  if (is_race_started()) {
     // macroarray_store(
     //     0,
     //     0b0000000,
@@ -306,14 +307,24 @@ void control_loop(void) {
     //     (int16_t)(line_sensors_error),
     //     (int16_t)(pwm_left),
     //     (int16_t)(pwm_right));
+
+    // LOG de Error de Sensores de Línea y Voltage Angular aplicado
     macroarray_store(
         0,
-        0b0100,
-        4,
-        (int16_t)(get_measured_linear_speed()),
-        (int16_t)(get_encoder_angular_speed() * 100),
-        (int16_t)(get_encoder_x_position()),
-        (int16_t)(get_encoder_y_position()));
+        0b01,
+        2,
+        (int16_t)(line_sensors_error),
+        (int16_t)(angular_voltage * 100));
+
+    // LOG de Velocidad Lineal, Angular y Posición cartesiana.
+    // macroarray_store(
+    //     0,
+    //     0b0100,
+    //     4,
+    //     (int16_t)(get_measured_linear_speed()),
+    //     (int16_t)(get_encoder_angular_speed() * 100),
+    //     (int16_t)(get_encoder_x_position()),
+    //     (int16_t)(get_encoder_y_position()));
   }
   // printf("%ld - %ld\n", pwm_left, pwm_right);
   set_motors_pwm(pwm_left, pwm_right);

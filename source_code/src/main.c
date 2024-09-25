@@ -18,12 +18,12 @@ static bool last_ir_start = false;
 
 void sys_tick_handler(void) {
   clock_tick();
-  check_buttons();
-  init_esc();
-  update_battery_voltage();
   update_encoder_readings();
-  update_gyro_readings();
+  init_esc();
+  check_buttons();
   sensors_update_line_position();
+  update_gyro_readings();
+  update_battery_voltage();
 }
 
 int main(void) {

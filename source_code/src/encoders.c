@@ -1,57 +1,32 @@
 #include "encoders.h"
 
-/* Physical variables for calibration */
-static volatile float wheels_separation = WHEELS_SEPARATION;
-
-/* Difference between the current count and the latest count */
 static volatile int32_t left_diff_ticks;
 static volatile int32_t right_diff_ticks;
 
-/* Total number of counts */
 static volatile int32_t left_total_ticks;
 static volatile int32_t right_total_ticks;
 
-/* Total travelled distance, in micrometers */
 static volatile int32_t left_micrometers;
 static volatile int32_t right_micrometers;
 
-/* Total travelled distance, in millimeters */
 static volatile int32_t left_millimeters;
 static volatile int32_t right_millimeters;
 static volatile float avg_millimeters;
 
-/* Speed, in millimeters per second */
 static volatile float left_speed;
 static volatile float right_speed;
 
-// /* Angular speed, in radians per second */
 static volatile float angular_speed;
 
-// /* Current angle, in rad*/
 static volatile float current_angle = 0;
 
-// /* Cartesian position, in micrometers*/
 static volatile float position_x = 0;
 static volatile float position_y = 0;
 
-// float get_wheels_separation(void) {
-//   return wheels_separation;
-// }
-
-// void set_wheels_separation(float value) {
-//   wheels_separation = value;
-// }
-
-/**
- * @brief Read left motor encoder counter.
- */
 static uint16_t read_encoder_left(void) {
   return (uint16_t)timer_get_counter(TIM4);
 }
 
-/**
- * @brief Read right motor encoder counter.
- */
 static uint16_t read_encoder_right(void) {
   return (uint16_t)timer_get_counter(TIM3);
 }
@@ -64,93 +39,46 @@ int32_t get_encoder_right_ticks(void) {
   return right_total_ticks;
 }
 
-/**
- * @brief Read left motor encoder travelled distance in micrometers.
- */
 int32_t get_encoder_left_micrometers(void) {
   return left_micrometers;
 }
 
-/**
- * @brief Read right motor encoder travelled distance in micrometers.
- */
 int32_t get_encoder_right_micrometers(void) {
   return right_micrometers;
 }
 
-/**
- * @brief Read the average travelled distance in micrometers.
- */
 int32_t get_encoder_avg_micrometers(void) {
   return (left_micrometers + right_micrometers) / 2;
 }
 
-/**
- * @brief Read left motor encoder travelled distance in millimeters.
- */
 int32_t get_encoder_left_millimeters(void) {
   return left_millimeters;
 }
 
-/**
- * @brief Read right motor encoder travelled distance in millimeters.
- */
 int32_t get_encoder_right_millimeters(void) {
   return right_millimeters;
 }
 
-/**
- * @brief Read the average travelled distance in millimeters.
- */
 int32_t get_encoder_avg_millimeters(void) {
   return (left_millimeters + right_millimeters) / 2;
 }
 
-/**
- * @brief Read left motor speed in millimeters per second.
- */
 float get_encoder_left_speed(void) {
   return left_speed;
 }
 
-/**
- * @brief Read right motor speed in millimeters per second.
- */
 float get_encoder_right_speed(void) {
   return right_speed;
 }
 
-/**
- * @brief Read the average motor speed in millimeters per second.
- */
 float get_encoder_avg_speed(void) {
   return (left_speed + right_speed) / 2.0f;
 }
 
-// /**
-//  * @brief Read left motor speed in meters per second.
-//  */
-// float get_encoder_avg_micrometers(void) {
-//   return avg_micrometers;
-// }
-
-// /**
-//  * @brief Read left motor speed in meters per second.
-//  */
-// float get_encoder_curernt_angle(void) {
-//   return current_angle;
-// }
-
-// /**
-//  * @brief Read left motor speed in meters per second.
-//  */
 int32_t get_encoder_x_position(void) {
   return (int32_t)(position_x);
 }
 
-// /**
-//  * @brief Read right motor speed in meters per second.
-//  */
 int32_t get_encoder_y_position(void) {
   return (int32_t)(position_y);
 }
@@ -160,6 +88,14 @@ int32_t get_encoder_y_position(void) {
  */
 float get_encoder_angular_speed(void) {
   return angular_speed;
+}
+
+float get_encoder_curernt_angle(void) {
+  return current_angle;
+}
+
+void reset_encoder_current_angle(void) {
+  current_angle = 0;
 }
 
 /**
@@ -222,7 +158,7 @@ void update_encoder_readings(void) {
   left_speed = 0.3f * new_left_speed + (1 - 0.3f) * left_speed;
   right_speed = 0.3f * new_right_speed + (1 - 0.3f) * right_speed;
 
-  angular_speed = ((left_speed - right_speed) / MILLIMETERS_PER_METER) / wheels_separation;
+  angular_speed = ((left_speed - right_speed) / MILLIMETERS_PER_METER) / WHEELS_SEPARATION;
 
   current_angle += angular_speed / SYSTICK_FREQUENCY_HZ;
 
