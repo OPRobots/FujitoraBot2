@@ -274,9 +274,11 @@ void control_loop(void) {
     // printf("%.4f | ", line_sensors_error);
   }
 
-  float angular_voltage =
-      KP_ANGULAR * angular_error + KD_ANGULAR * (angular_error - last_angular_error) +
-      KP_LINE_SENSORS * line_sensors_error + KI_LINE_SENSORS * sum_line_sensors_error + KD_LINE_SENSORS * (line_sensors_error - last_line_sensors_error);
+  float angular_voltage = 0;
+  if (abs(ideal_linear_speed) > 0 || abs(ideal_linear_speed_percent) > 0) {
+    angular_voltage = KP_ANGULAR * angular_error + KD_ANGULAR * (angular_error - last_angular_error) +
+                      KP_LINE_SENSORS * line_sensors_error + KI_LINE_SENSORS * sum_line_sensors_error + KD_LINE_SENSORS * (line_sensors_error - last_line_sensors_error);
+  }
 
   voltage_left = linear_voltage + angular_voltage;
   voltage_right = linear_voltage - angular_voltage;
