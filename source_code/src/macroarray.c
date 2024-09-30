@@ -4,7 +4,8 @@ static uint32_t macroarray_last_update_ms = 0;
 static uint8_t macroarray_size = 0;
 static uint16_t macroarray_float_bits = 0;
 static uint16_t macroarray_start = 0;
-static uint16_t macroarray_end = 0;
+static int16_t macroarray_end = -1;
+static uint16_t macroarray_length = 0;
 static int16_t macroarray[MACROARRAY_LENGTH];
 
 void macroarray_store(uint8_t ms, uint16_t float_bits, uint8_t size, ...) {
@@ -16,29 +17,31 @@ void macroarray_store(uint8_t ms, uint16_t float_bits, uint8_t size, ...) {
 
   if (macroarray_size != size) {
     macroarray_start = 0;
-    macroarray_end = 0;
+    macroarray_end = -1;
     macroarray_size = size;
     macroarray_float_bits = float_bits;
+    macroarray_length = floor((float)MACROARRAY_LENGTH / size) * size;
   }
 
   va_list valist;
   va_start(valist, size);
   for (uint8_t i = 0; i < size; i++) {
-    macroarray[macroarray_end] = va_arg(valist, int);
 
-    if (macroarray_end < macroarray_start) {
+    if (macroarray_end < macroarray_start && macroarray_end >= 0) {
       macroarray_end++;
       macroarray_start++;
     } else {
       macroarray_end++;
     }
-    if (macroarray_start >= MACROARRAY_LENGTH) {
-      macroarray_start = 0;
-    }
-    if (macroarray_end >= MACROARRAY_LENGTH) {
+    // if (macroarray_start >= macroarray_length) {
+    //   macroarray_start = 0;
+    // }
+    if (macroarray_end >= macroarray_length) {
       macroarray_end = 0;
       macroarray_start = 1;
     }
+
+    macroarray[macroarray_end] = va_arg(valist, int);
   }
   va_end(valist);
 }
@@ -64,10 +67,10 @@ void macroarray_print_plot(void) {
     }
 
     i++;
-    if (i >= MACROARRAY_LENGTH) {
+    if (i >= macroarray_length && macroarray_end < macroarray_start) {
       i = 0;
     }
-  } while (i != macroarray_end);
+  } while ((macroarray_start < macroarray_end && i <= macroarray_end) || (macroarray_start > macroarray_end && (i > macroarray_start || i <= macroarray_end)));
 }
 
 void macroarray_print_tabs(void) {
@@ -91,8 +94,8 @@ void macroarray_print_tabs(void) {
     }
 
     i++;
-    if (i >= MACROARRAY_LENGTH) {
+    if (i >= macroarray_length) {
       i = 0;
     }
-  } while (i != macroarray_end);
+  } while ((macroarray_start < macroarray_end && i <= macroarray_end) || (macroarray_start > macroarray_end && (i > macroarray_start || i <= macroarray_end)));
 }
