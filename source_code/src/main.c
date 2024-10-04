@@ -32,7 +32,7 @@ int main(void) {
   eeprom_load();
 
   sensors_calibration();
-  
+
   while (1) {
     if (!is_race_started()) {
       menu_handler();
@@ -63,7 +63,7 @@ int main(void) {
         set_line_sensors_correction(true);
       }
     } else {
-      if ((menu_run_get_run_type() == RUN_DEBUG && get_clock_ticks() - get_race_started_ms() > (uint32_t)(3000 + get_start_millis())) || (!get_ir_start() && last_ir_start)) {
+      if (!get_ir_start() && last_ir_start) {
         emergency_stop();
         last_ir_start = get_ir_start();
       }
