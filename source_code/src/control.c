@@ -298,25 +298,27 @@ void control_loop(void) {
   }
 
   if (is_race_started()) {
-    // macroarray_store(
-    //     0,
-    //     0b0000000,
-    //     7,
-    //     (int16_t)(target_linear_speed),
-    //     (int16_t)(ideal_linear_speed),
-    //     (int16_t)(get_measured_linear_speed()),
-    //     (int16_t)(linear_error),
-    //     (int16_t)(line_sensors_error),
-    //     (int16_t)(pwm_left),
-    //     (int16_t)(pwm_right));
-
-    // LOG de Error de Sensores de Línea y Voltage Angular aplicado
     macroarray_store(
         0,
-        0b01,
-        2,
+        0b0,
+        8,
+        (int16_t)(target_linear_speed),
+        (int16_t)(ideal_linear_speed),
+        (int16_t)(get_measured_linear_speed()),
+        // (int16_t)(linear_error / 1000),
         (int16_t)(line_sensors_error),
-        (int16_t)(angular_voltage * 100));
+        (int16_t)(linear_voltage * 100),
+        (int16_t)(angular_voltage * 100),
+        (int16_t)(pwm_left),
+        (int16_t)(pwm_right));
+
+    // LOG de Error de Sensores de Línea y Voltage Angular aplicado
+    // macroarray_store(
+    //     0,
+    //     0b01,
+    //     2,
+    //     (int16_t)(line_sensors_error),
+    //     (int16_t)(angular_voltage * 100));
 
     // LOG de Velocidad Lineal, Angular y Posición cartesiana.
     // macroarray_store(
