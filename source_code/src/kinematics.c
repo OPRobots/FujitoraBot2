@@ -53,7 +53,7 @@ static struct kinematics kinematics_settings[] = {
         .linear_speed_percent = 57,
         .linear_accel_percent = 100,
         .linear_break_percent = 100,
-        .fan_speed = 80,
+        .fan_speed = 75,
     }};
 
 static struct kinematics kinematics;
