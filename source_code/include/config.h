@@ -48,14 +48,14 @@
 #define BATTERY_3S_HIGH_LIMIT_VOLTAGE 12.6
 #define BATTERY_3S_LOW_LIMIT_VOLTAGE 11.1
 
-#define CONFIG_RUN_RACE 1
+// #define CONFIG_RUN_RACE 1
 #define CONFIG_RUN_DEBUG 0
-
-#define CONFIG_SPEED_MS 1
-#define CONFIG_SPEED_PWM 0
 
 #define CONFIG_LINE_BLACK 0
 // #define CONFIG_LINE_WHITE 1
+
+#define ANALOG_SENSORS_MIN_PERCENT (20 / 100.0)
+#define ANALOG_SENSORS_MAX_PERCENT (80 / 100.0)
 
 uint16_t get_offtrack_time(void);
 uint16_t get_start_millis(void);

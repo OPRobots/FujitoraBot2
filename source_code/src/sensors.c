@@ -40,20 +40,32 @@ uint16_t get_sensor_raw(uint8_t pos) {
 
 uint16_t get_sensor_calibrated(uint8_t pos) {
   if (pos < NUM_SENSORS) {
-    uint16_t sensor_calibrado = get_sensor_raw(pos);
+    uint16_t sensor_value = get_sensor_raw(pos);
 
-    if (sensor_calibrado >= sensores_umb[pos]) {
-      sensor_calibrado = LECTURA_MAXIMO_SENSORES_LINEA;
-    } else {
-      sensor_calibrado = LECTURA_MINIMO_SENSORES_LINEA;
+    switch (menu_run_get_sensors_mode()) {
+      case SENSORS_ANALOG:
+        if (sensor_value < (sensores_min[pos] + (sensores_max[pos] - sensores_min[pos]) * ANALOG_SENSORS_MIN_PERCENT)) {
+          sensor_value = LECTURA_MINIMO_SENSORES_LINEA;
+        } else if (sensor_value > (sensores_min[pos] + (sensores_max[pos] - sensores_min[pos]) * ANALOG_SENSORS_MAX_PERCENT)) {
+          sensor_value = LECTURA_MAXIMO_SENSORES_LINEA;
+        }
+        break;
+      case SENSORS_DIGITAL:
+      default:
+        if (sensor_value >= sensores_umb[pos]) {
+          sensor_value = LECTURA_MAXIMO_SENSORES_LINEA;
+        } else {
+          sensor_value = LECTURA_MINIMO_SENSORES_LINEA;
+        }
+        break;
     }
 
 #ifdef CONFIG_LINE_BLACK
-    return sensor_calibrado;
+    return sensor_value;
 #elif CONFIG_LINE_WHITE
-    return LECTURA_MAXIMO_SENSORES_LINEA - sensor_calibrado;
+    return LECTURA_MAXIMO_SENSORES_LINEA - sensor_value;
 #else
-    return sensor_calibrado;
+    return sensor_value;
 #endif
 
   } else {
