@@ -62,7 +62,6 @@ static void update_ideal_linear_speed(void) {
   switch (menu_run_get_control_strategy()) {
     case CONTROL_ENCODERS:
       if (ideal_linear_speed < target_linear_speed) {
-        ideal_linear_speed += MIN_ACCEL_MS2 / CONTROL_FREQUENCY_HZ;
         ideal_linear_speed += get_kinematics().linear_accel / CONTROL_FREQUENCY_HZ;
         if (ideal_linear_speed > target_linear_speed) {
           ideal_linear_speed = target_linear_speed;
