@@ -8,6 +8,7 @@
 #include "encoders.h"
 #include "leds.h"
 #include "motors.h"
+#include "menu_run.h"
 
 #include <libopencm3/stm32/adc.h>
 #include <libopencm3/stm32/gpio.h>

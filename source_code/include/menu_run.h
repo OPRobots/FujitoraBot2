@@ -26,9 +26,9 @@ enum filter_mode {
   FILTER_BIGGER = 1,
 };
 
-enum run_type {
-  RUN_RACE = 0,
-  RUN_DEBUG = 1,
+enum sensors_mode {
+  SENSORS_ANALOG = 0,
+  SENSORS_DIGITAL = 1,
 };
 
 enum control_strategy {
@@ -46,7 +46,7 @@ int16_t *get_menu_run_values(void);
 enum speed_strategy menu_run_get_speed(void);
 enum adaptative_speed menu_run_get_adaptative_speed(void);
 enum filter_mode menu_run_get_filter_mode(void);
-enum run_type menu_run_get_run_type(void);
+enum sensors_mode menu_run_get_sensors_mode(void);
 enum control_strategy menu_run_get_control_strategy(void);
 
 #endif

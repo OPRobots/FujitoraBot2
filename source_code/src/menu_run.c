@@ -4,7 +4,7 @@
 #define MODE_RACE 1
 #define MODE_ADAPTATIVE_SPEED 2
 #define MODE_BIGGER_FILTER 3
-#define MODE_DEBUG_RUN 4
+#define MODE_DIGITAL_SENSORS 4
 #define MODE_ENCODERS 5
 uint8_t modeRun = MODE_SPEED;
 
@@ -12,7 +12,7 @@ uint8_t modeRun = MODE_SPEED;
 #define MODE_RACE_VALUES 2
 #define MODE_ADAPTATIVE_SPEED_VALUES 2
 #define MODE_BIGGER_FILTER_VALUES 2
-#define MODE_DEBUG_RUN_VALUES 2
+#define MODE_DIGITAL_SENSORS_VALUES 2
 #define MODE_ENCODERS_VALUES 2
 
 int16_t valueRun[MENU_RUN_NUM_MODES] = {0, 0, 0, 1, 1, 1};
@@ -61,9 +61,9 @@ static void handle_menu_run_values(void) {
     if (valueRun[modeRun] == 1) {
       if (abs(get_sensor_line_position()) < 100) {
         set_RGB_color(50, 0, 50);
-      } else if(blinkState) {
+      } else if (blinkState) {
         set_RGB_color(50, 0, 50);
-      }else{
+      } else {
         set_RGB_color(50, 0, 0);
       }
     } else {
@@ -97,7 +97,7 @@ static void handle_menu_run_values(void) {
     set_info_led(6, valueRun[MODE_BIGGER_FILTER] == 1);
   }
 
-  if (modeRun == MODE_DEBUG_RUN) {
+  if (modeRun == MODE_DIGITAL_SENSORS) {
     if (valueRun[modeRun] == 1) {
       set_RGB_color(0, 50, 0);
     } else {
@@ -105,7 +105,7 @@ static void handle_menu_run_values(void) {
     }
     set_info_led(8, blinkState);
   } else {
-    set_info_led(8, valueRun[MODE_DEBUG_RUN] == 1);
+    set_info_led(8, valueRun[MODE_DIGITAL_SENSORS] == 1);
   }
 
   if (modeRun == MODE_ENCODERS) {
@@ -139,8 +139,8 @@ static void handle_menu_run_btn(void) {
       case MODE_BIGGER_FILTER:
         mode_values = MODE_BIGGER_FILTER_VALUES;
         break;
-      case MODE_DEBUG_RUN:
-        mode_values = MODE_DEBUG_RUN_VALUES;
+      case MODE_DIGITAL_SENSORS:
+        mode_values = MODE_DIGITAL_SENSORS_VALUES;
         break;
       case MODE_ENCODERS:
         mode_values = MODE_ENCODERS_VALUES;
@@ -217,9 +217,10 @@ enum filter_mode menu_run_get_filter_mode(void) {
   return valueRun[MODE_BIGGER_FILTER];
 }
 
-enum run_type menu_run_get_run_type(void) {
-  return valueRun[MODE_DEBUG_RUN];
+enum sensors_mode menu_run_get_sensors_mode(void) {
+  return valueRun[MODE_DIGITAL_SENSORS];
 }
+
 enum control_strategy menu_run_get_control_strategy(void) {
   return valueRun[MODE_ENCODERS];
 }

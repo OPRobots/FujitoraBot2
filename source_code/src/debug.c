@@ -4,8 +4,8 @@ bool debug_enabled = false;
 uint32_t last_print_debug = 0;
 
 static void debug_macroarray(void) {
-  // macroarray_print_plot();
-  macroarray_print_tabs();
+  macroarray_print_plot();
+  // macroarray_print_tabs();
   debug_enabled = false;
 }
 
@@ -66,7 +66,7 @@ static void debug_posicion_correccion(void) {
 static void debug_line_position(void) {
   if (get_clock_ticks() > last_print_debug + 50) {
     sensors_update_line_position();
-    printf("%d\t%ld\t%d\n", -(get_sensors_num() + 2) * 1000 / 2, get_sensor_line_position(), (get_sensors_num() + 2) * 1000 / 2);
+    printf("%d\t%ld\t%d\n", -1200, get_sensor_line_position(), 1200);
     last_print_debug = get_clock_ticks();
   }
 }

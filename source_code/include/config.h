@@ -35,12 +35,6 @@
 #define MICROMETERS_PER_TICK 14.5356
 #define WHEELS_SEPARATION 0.12
 
-#define MIN_SPEED_PERCENT 5
-#define MAX_ACCEL_PERCENT 45.0
-#define MIN_ACCEL_MS2 3000
-#define MAX_ACCEL_MS2 8000
-#define MAX_BREAK_MS2 10000
-
 /** Divisor de Voltage */
 #define VOLT_DIV_FACTOR 3.8673
 #define BATTERY_2S_HIGH_LIMIT_VOLTAGE 7.4
@@ -49,13 +43,13 @@
 #define BATTERY_3S_LOW_LIMIT_VOLTAGE 11.1
 
 #define CONFIG_RUN_RACE 1
-#define CONFIG_RUN_DEBUG 0
-
-#define CONFIG_SPEED_MS 1
-#define CONFIG_SPEED_PWM 0
+// #define CONFIG_RUN_DEBUG 0
 
 #define CONFIG_LINE_BLACK 0
 // #define CONFIG_LINE_WHITE 1
+
+#define ANALOG_SENSORS_MIN_PERCENT (20 / 100.0)
+#define ANALOG_SENSORS_MAX_PERCENT (80 / 100.0)
 
 uint16_t get_offtrack_time(void);
 uint16_t get_start_millis(void);
