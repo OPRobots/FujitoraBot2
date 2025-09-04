@@ -1,7 +1,7 @@
 #include "sensors.h"
 
 // ADC de derecha a izquierda
-static uint8_t adc_channels[NUM_ADC_CHANNELS] = {ADC_CHANNEL10, ADC_CHANNEL11, ADC_CHANNEL12};
+static uint8_t adc_channels[NUM_ADC_CHANNELS] = {ADC_CHANNEL11, ADC_CHANNEL12, ADC_CHANNEL10};
 
 static volatile uint16_t adc_raw[NUM_ADC_CHANNELS];
 static volatile uint16_t sensores_raw[NUM_SENSORS];

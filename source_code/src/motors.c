@@ -42,16 +42,16 @@ void set_motors_speed(float velI, float velD) {
   if (velD != 0) {
     ocD = map(velD, 0, 100, MOTORS_STOP_PWM, MOTORS_MAX_PWM);
   }
-  timer_set_oc_value(TIM8, TIM_OC1, (uint32_t)ocI);
-  timer_set_oc_value(TIM8, TIM_OC3, (uint32_t)ocD);
+  timer_set_oc_value(TIM8, TIM_OC4, (uint32_t)ocI);
+  timer_set_oc_value(TIM8, TIM_OC2, (uint32_t)ocD);
 }
 
 void set_motors_pwm(uint32_t pwm_left, uint32_t pwm_right) {
   if (!escInited) {
     return;
   }
-  timer_set_oc_value(TIM8, TIM_OC1, pwm_left);
-  timer_set_oc_value(TIM8, TIM_OC3, pwm_right);
+  timer_set_oc_value(TIM8, TIM_OC4, pwm_left);
+  timer_set_oc_value(TIM8, TIM_OC2, pwm_right);
 }
 
 void set_fan_speed(uint8_t vel) {
@@ -63,6 +63,6 @@ void set_fan_speed(uint8_t vel) {
   if (vel != 0) {
     ocF = map(abs(vel), 0, 100, MOTORS_STOP_PWM, MOTORS_MAX_PWM);
   }
-  timer_set_oc_value(TIM8, TIM_OC2, ocF);
-  timer_set_oc_value(TIM8, TIM_OC4, ocF);
+  timer_set_oc_value(TIM8, TIM_OC1, ocF);
+  timer_set_oc_value(TIM8, TIM_OC3, ocF);
 }
