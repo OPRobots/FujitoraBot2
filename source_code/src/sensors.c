@@ -107,12 +107,12 @@ void sensors_calibration(void) {
     uint32_t millisSensorsChecked = 0;
     while (!get_menu_mode_btn() && (countSensorsChecked < get_sensors_num() || get_clock_ticks() - millisSensorsChecked < 500)) {
       for (uint8_t sensor = 0; sensor < get_sensors_num(); sensor++) {
-        if (abs(get_sensor_raw(sensor) - sensores_min[sensor]) < 200) {
+        if (abs(get_sensor_raw(sensor) - sensores_min[sensor]) < 250) {
           sensorsMinChecked[sensor] = true;
         }
-        if (abs(get_sensor_raw(sensor) - sensores_max[sensor]) < 200 && sensorsMinChecked[sensor]) {
+        if (abs(get_sensor_raw(sensor) - sensores_max[sensor]) < 250 && sensorsMinChecked[sensor]) {
           if (!sensorsMaxChecked[sensor]) {
-            printf("Sensor %2d OK\n", (sensor + 1));
+            printf("Sensor %2d MAX OK\n", (sensor + 1));
           }
           sensorsMaxChecked[sensor] = true;
         }
