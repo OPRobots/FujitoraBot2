@@ -297,9 +297,20 @@ void control_loop(void) {
   }
 
   if (is_race_started()) {
+
+    static char *labels[] = {
+        "target_linear_speed_percent",
+        "ideal_linear_speed_percent",
+        "line_sensors_error",
+        "linear_voltage",
+        "angular_voltage",
+        "pwm_left",
+        "pwm_right",
+        "battery_voltage"};
     macroarray_store(
         5,
         0b01111001,
+        labels,
         8,
         (int16_t)(target_linear_speed_percent),
         (int16_t)(ideal_linear_speed_percent * 100),
@@ -310,24 +321,6 @@ void control_loop(void) {
         (int16_t)(pwm_left),
         (int16_t)(pwm_right),
         (int16_t)(get_battery_voltage() * 100));
-
-    // LOG de Error de Sensores de Línea y Voltage Angular aplicado
-    // macroarray_store(
-    //     0,
-    //     0b01,
-    //     2,
-    //     (int16_t)(line_sensors_error),
-    //     (int16_t)(angular_voltage * 100));
-
-    // LOG de Velocidad Lineal, Angular y Posición cartesiana.
-    // macroarray_store(
-    //     0,
-    //     0b0100,
-    //     4,
-    //     (int16_t)(get_measured_linear_speed()),
-    //     (int16_t)(get_encoder_angular_speed() * 100),
-    //     (int16_t)(get_encoder_x_position()),
-    //     (int16_t)(get_encoder_y_position()));
   }
   // printf("%ld - %ld\n", pwm_left, pwm_right);
   set_motors_pwm(pwm_left, pwm_right);
