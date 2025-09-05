@@ -101,6 +101,10 @@ static void setup_gpio(void) {
   gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6 | GPIO7 | GPIO8 | GPIO9);
   gpio_set_af(GPIOC, GPIO_AF3, GPIO6 | GPIO7 | GPIO8 | GPIO9);
 
+  // Salida Auxiliar
+  gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO12);
+
+
   // USART3
   gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10 | GPIO11);
   gpio_set_af(GPIOB, GPIO_AF7, GPIO10 | GPIO11);
@@ -235,7 +239,7 @@ static void setup_motors_pwm(void) {
 static void setup_main_loop_timer(void) {
   rcc_periph_reset_pulse(RST_TIM5);
   timer_set_mode(TIM5, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-  timer_set_prescaler(TIM5, ((rcc_apb1_frequency * 2) / 500000 - 2));
+  timer_set_prescaler(TIM5, ((rcc_apb1_frequency * 2) / 2000000 - 2));
   timer_disable_preload(TIM5);
   timer_continuous_mode(TIM5);
   timer_set_period(TIM5, 1024);
@@ -248,6 +252,7 @@ void tim5_isr(void) {
   if (timer_get_flag(TIM5, TIM_SR_CC1IF)) {
     timer_clear_flag(TIM5, TIM_SR_CC1IF);
     control_loop();
+    // gpio_toggle(GPIOA, GPIO12);
   }
 }
 
