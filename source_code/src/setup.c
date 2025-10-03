@@ -239,7 +239,7 @@ static void setup_motors_pwm(void) {
 static void setup_main_loop_timer(void) {
   rcc_periph_reset_pulse(RST_TIM5);
   timer_set_mode(TIM5, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-  timer_set_prescaler(TIM5, ((rcc_apb1_frequency * 2) / 2000000 - 2));
+  timer_set_prescaler(TIM5, ((rcc_apb1_frequency * 2) / 1000000  - 2));
   timer_disable_preload(TIM5);
   timer_continuous_mode(TIM5);
   timer_set_period(TIM5, 1024);
