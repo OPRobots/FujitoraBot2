@@ -296,7 +296,7 @@ void control_loop(void) {
     pwm_right = MOTORS_MAX_PWM;
   }
 
-  if (is_race_started()) {
+  if (is_race_started() && linear_voltage != 0) {
 
     static char *labels[] = {
         "target_linear_speed_percent",
@@ -308,7 +308,7 @@ void control_loop(void) {
         "pwm_right",
         "battery_voltage"};
     macroarray_store(
-        5,
+        0,
         0b01111001,
         labels,
         8,

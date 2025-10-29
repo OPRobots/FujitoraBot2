@@ -44,7 +44,7 @@ static struct kinematics kinematics_settings[] = {
         .linear_speed_percent = 35,
         .linear_accel_percent = 50,
         .linear_break_percent = 50,
-        .fan_speed = 40,
+        .fan_speed = 60,
     },
     [SPEED_HAKI] = {
         .linear_speed = 4500,
