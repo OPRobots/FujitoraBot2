@@ -8,7 +8,7 @@ static struct kinematics kinematics_settings[] = {
         .linear_speed_percent = 27,
         .linear_accel_percent = 100,
         .linear_break_percent = 100,
-        .fan_speed = 10,
+        .fan_speed = 20,
     },
     [SPEED_BASE] = {
         .linear_speed = 2500,
@@ -17,7 +17,7 @@ static struct kinematics kinematics_settings[] = {
         .linear_speed_percent = 33,
         .linear_accel_percent = 100,
         .linear_break_percent = 100,
-        .fan_speed = 20,
+        .fan_speed = 30,
     },
     [SPEED_NORMAL] = {
         .linear_speed = 3000,
@@ -26,7 +26,7 @@ static struct kinematics kinematics_settings[] = {
         .linear_speed_percent = 40,
         .linear_accel_percent = 100,
         .linear_break_percent = 100,
-        .fan_speed = 30,
+        .fan_speed = 40,
     },
     [SPEED_MEDIUM] = {
         .linear_speed = 3500,
@@ -35,7 +35,7 @@ static struct kinematics kinematics_settings[] = {
         .linear_speed_percent = 50,
         .linear_accel_percent = 100,
         .linear_break_percent = 100,
-        .fan_speed = 40,
+        .fan_speed = 50,
     },
     [SPEED_FAST] = {
         .linear_speed = 4000,
@@ -44,7 +44,7 @@ static struct kinematics kinematics_settings[] = {
         .linear_speed_percent = 60,
         .linear_accel_percent = 100,
         .linear_break_percent = 100,
-        .fan_speed = 50,
+        .fan_speed = 60,
     },
     [SPEED_HAKI] = {
         .linear_speed = 4500,
@@ -53,7 +53,7 @@ static struct kinematics kinematics_settings[] = {
         .linear_speed_percent = 70,
         .linear_accel_percent = 100,
         .linear_break_percent = 100,
-        .fan_speed = 65,
+        .fan_speed = 75,
     }};
 
 static struct kinematics kinematics;
