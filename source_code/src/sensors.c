@@ -295,7 +295,7 @@ void sensors_update_line_position(void) {
     if (sensor_value >= sensores_umb[sensor]) {
       sensores_detectando_sin_filtro++;
     }
-    if (sensor < sensor_ini_linea || sensor > sensor_fin_linea) {
+    if (menu_run_get_filter_mode() == FILTER_BIGGER && (sensor < sensor_ini_linea || sensor > sensor_fin_linea)) {
       sensor_value = LECTURA_MINIMO_SENSORES_LINEA;
     }
 
