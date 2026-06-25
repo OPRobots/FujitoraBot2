@@ -4,7 +4,7 @@ Versión 2 de FujitoraBot, renovando el hardware después de 5 años: más rápi
 con 24 sensores de línea, giroscopio MPU-6500 y diseño más modular. Robot
 micromouse de competición orientado al seguimiento de línea de alta velocidad.
 
-![FujitoraBot2](/images/FujitoraBot2_finish_1.jpg)
+![FujitoraBot2](../images/FujitoraBot2_finish_1.jpg)
 
 ## 🏆 Palmarés
 
