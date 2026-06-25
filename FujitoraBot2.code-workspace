@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"name": "FujitoraBot2",
+			"path": "."
+		},
+		{
+			"name": "source_code",
+			"path": "source_code"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.tpl": "html",
+			"eeprom.h": "c",
+			"flash.h": "c",
+			"flash_common_f24.h": "c",
+			"flash_common_f.h": "c",
+			"flash_common_all.h": "c",
+			"memorymap.h": "c",
+			"common.h": "c",
+			"config.h": "c"
+		}
+	}
+}

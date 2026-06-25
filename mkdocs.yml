@@ -1,0 +1,72 @@
+site_name: FujitoraBot2
+site_description: Documentación técnica de FujitoraBot2 — robot micromouse con 24 sensores IR y giroscopio
+site_author: robotaleh
+site_url: https://docs.oprobots.org/robots/FujitoraBot2
+repo_name: OPRobots/FujitoraBot2
+
+theme:
+  name: material
+  custom_dir: docs/assets/templates
+  language: es
+  font:
+    text: Roboto
+    code: Roboto Mono
+  palette:
+    - scheme: default
+      primary: white
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Modo oscuro
+    - scheme: slate
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Modo claro
+  features:
+    - navigation.instant
+    - navigation.top
+    - toc.follow
+    - search.highlight
+    - content.code.copy
+  logo: assets/imgs/opr_logo.png
+  favicon: assets/imgs/favicon/favicon.ico
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+extra_javascript:
+  - assets/js/mermaid-zoom.js
+
+extra_css:
+  - assets/css/custom.css
+  - assets/css/mermaid-zoom.css
+
+exclude_docs: |
+  README.md
+
+validation:
+  links:
+    not_found: ignore
+
+nav:
+  - Inicio: index.md
+  - Hardware: 01-hardware.md
+  - Arquitectura Software: 02-software-architecture.md
+  - Sensores: 03-sensors.md
+  - Movimiento: 04-movement.md
+  - Control PID: 05-control-system.md
+  - Menú: 06-menu-system.md
+  - Debug: 07-debug-system.md
+  - Calibración: 08-calibration.md
+  - EEPROM: 09-storage.md
+  - Encoders y Giroscopio: 10-encoders-gyro.md
+  - Batería y LEDs: 11-battery-leds.md
+  - Cinemática: 12-kinematics.md
+  - Problemas Conocidos: 13-known-issues.md
